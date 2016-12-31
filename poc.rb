@@ -320,8 +320,16 @@ class CreateRelease < Command
   attributes :id, :title
 end
 
+class UpdateRelease < Command
+  attributes :id, :title
+end
+
 class ReleaseCreated < Event
   attributes :id, :title
+end
+
+class ReleaseUpdated < Event
+  attributes :title
 end
 
 module CrudAggregate
@@ -335,19 +343,25 @@ module CrudAggregate
       message = "process_" + command.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
       send message.to_sym, command
     end
+  end
 
+  module InstanceMethods
+
+    def assert_validity
+    end
   end
 
   def self.included(othermod)
     othermod.extend CommandHandler::InstanceMethods
     othermod.extend EventStoreRepository::InstanceMethods
     othermod.extend ClassMethods
+    othermod.include InstanceMethods
 
     othermod.define_singleton_method("type") { othermod }
 
     othermod.define_singleton_method "process_create_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") do |command|
       obj = new(command.to_h)
-      #RecordingValidator.new(recording: recording).assert_validity
+      obj.assert_validity
       event = self.class.const_get("#{othermod.name}Created").new(command.to_h)
       repository.create command.id
       repository.append command.id, event
@@ -358,9 +372,13 @@ module CrudAggregate
       attrs = command.to_h
       attrs.delete :id
       obj.set_attributes attrs
-      #RecordingValidator.new(recording: recording).assert_validity
+      obj.assert_validity
       event = self.class.const_get("#{othermod.name}Updated").new(attrs)
       repository.append command.id, event
+    end
+
+    othermod.define_singleton_method("apply_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") + "_updated") do |obj, event|
+      obj.set_attributes(event.to_h)
     end
   end
 end
@@ -378,6 +396,8 @@ class RecordingProjection < RecordingRepository
   undef_method :append
 
 end
+
+ReleaseProjection = Release
 
 class Application < BaseObject
 
@@ -411,9 +431,13 @@ class Application < BaseObject
     p registry.event_store
     p RecordingProjection.new.find(id)
 
+    id = uuid.()
     command_handler = registry.command_handler_for(Release)
-    command = CreateRelease.new(id: uuid.(), title: "Test release")
+    command = CreateRelease.new(id: id, title: "Test release")
     command_handler.handle command
+    command = UpdateRelease.new(id: id, title: "Test release updated")
+    command_handler.handle command
+    p ReleaseProjection.find id
   end
 
   private
