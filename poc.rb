@@ -3,7 +3,6 @@ require 'date'
 
 # TODO:
 #  - Add example where all concerns are merged into one class
-#  - Add example for CRUD auto generated
 #  - Add some projections
 #  - Add pub/sub
 
@@ -60,13 +59,21 @@ class BaseObject
     names
   end
 
-  def logg(*args)
+  def self.logg(*args)
     print "#{DateTime.now} - ", *args
     puts
   end
 
-  def registry
+  def logg(*args)
+    self.class.logg(*args)
+  end
+
+  def self.registry
     @@registry ||= Registry.new
+  end
+
+  def registry
+    self.class.registry
   end
 
   def to_h
@@ -77,8 +84,12 @@ end
 class Registry < BaseObject
 
   def command_handler_for(klass)
-    handler_class = self.class.const_get("#{klass}CommandHandler")
-    CommandHandlerLoggDecorator.new(handler_class.new)
+    handler = if klass.respond_to? :handle
+                klass
+              else
+                self.class.const_get("#{klass}CommandHandler").new
+              end
+    CommandHandlerLoggDecorator.new(handler)
   end
 
   def event_store
@@ -164,14 +175,47 @@ class EventStore < BaseObject
 end
 
 class EventStoreRepository < BaseObject
+
+  module InstanceMethods
+    def create(id)
+      registry.event_store.create type, id
+    end
+
+    def append(id, events)
+      registry.event_store.append id, events
+    end
+
+    def find(id)
+      stream = registry.event_store.event_stream_for(id).to_a
+      build stream
+    end
+
+    private
+
+    def build(stream)
+      obj = type.new stream.first.to_h
+      stream[1..-1].each do |event|
+        message = "apply_" + event.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+        send message.to_sym, obj, event
+      end
+      obj
+    end
+  end
+
+  include InstanceMethods
 end
 
 class CommandHandler < BaseObject
 
-  def handle(command)
-    process(command)
-    return
+  module InstanceMethods
+    def handle(command)
+      process(command)
+      return
+    end
   end
+
+  include InstanceMethods
+
 end
 
 class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
@@ -215,28 +259,8 @@ end
 
 class RecordingRepository < EventStoreRepository
 
-  def create(id)
-    registry.event_store.create Recording, id
-  end
-
-  def append(id, events)
-    registry.event_store.append id, events
-  end
-
-  def find(id)
-    stream = registry.event_store.event_stream_for(id).to_a
-    build stream
-  end
-
-  private
-
-  def build(stream)
-    obj = Recording.new stream.first.to_h
-    stream[1..-1].each do |event|
-      message = "apply_" + event.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
-      send message.to_sym, obj, event
-    end
-    obj
+  def type
+    Recording
   end
 
   def apply_recording_updated(recording, event)
@@ -292,6 +316,61 @@ class Recording < Entity
 
 end
 
+class CreateRelease < Command
+  attributes :id, :title
+end
+
+class ReleaseCreated < Event
+  attributes :id, :title
+end
+
+module CrudAggregate
+
+  module ClassMethods
+    def repository
+      self
+    end
+
+    def process(command)
+      message = "process_" + command.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+      send message.to_sym, command
+    end
+
+  end
+
+  def self.included(othermod)
+    othermod.extend CommandHandler::InstanceMethods
+    othermod.extend EventStoreRepository::InstanceMethods
+    othermod.extend ClassMethods
+
+    othermod.define_singleton_method("type") { othermod }
+
+    othermod.define_singleton_method "process_create_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") do |command|
+      obj = new(command.to_h)
+      #RecordingValidator.new(recording: recording).assert_validity
+      event = self.class.const_get("#{othermod.name}Created").new(command.to_h)
+      repository.create command.id
+      repository.append command.id, event
+    end
+
+    othermod.define_singleton_method "process_update_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") do |command|
+      obj = repository.find command.id
+      attrs = command.to_h
+      attrs.delete :id
+      obj.set_attributes attrs
+      #RecordingValidator.new(recording: recording).assert_validity
+      event = self.class.const_get("#{othermod.name}Updated").new(attrs)
+      repository.append command.id, event
+    end
+  end
+end
+
+class Release < Entity
+  attributes :id, :title
+
+  include CrudAggregate
+
+end
 
 class RecordingProjection < RecordingRepository
 
@@ -331,6 +410,10 @@ class Application < BaseObject
     puts
     p registry.event_store
     p RecordingProjection.new.find(id)
+
+    command_handler = registry.command_handler_for(Release)
+    command = CreateRelease.new(id: uuid.(), title: "Test release")
+    command_handler.handle command
   end
 
   private
