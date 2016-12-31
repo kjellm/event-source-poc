@@ -390,12 +390,7 @@ class Release < Entity
 
 end
 
-class RecordingProjection < RecordingRepository
-
-  undef_method :create
-  undef_method :append
-
-end
+RecordingProjection = RecordingRepository.new
 
 ReleaseProjection = Release
 
@@ -429,14 +424,22 @@ class Application < BaseObject
 
     puts
     p registry.event_store
-    p RecordingProjection.new.find(id)
+    p RecordingProjection.find(id)
 
+    puts
     id = uuid.()
     command_handler = registry.command_handler_for(Release)
-    command = CreateRelease.new(id: id, title: "Test release")
+    http_request_data = {id: id, title: "Test release"}
+    logg http_request_data.inspect
+    command = CreateRelease.new(http_request_data)
     command_handler.handle command
-    command = UpdateRelease.new(id: id, title: "Test release updated")
+    http_request_data = {id: id, title: "Test release updated"}
+    logg http_request_data.inspect
+    command = UpdateRelease.new(http_request_data)
     command_handler.handle command
+
+    puts
+    p registry.event_store
     p ReleaseProjection.find id
   end
 
