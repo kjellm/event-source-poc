@@ -2,9 +2,16 @@ require 'set'
 require 'date'
 
 # TODO:
-#  - Add example where all concerns are merged into one class
 #  - Add some projections
 #  - Add pub/sub
+
+class String
+
+  def snake_case
+    split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+  end
+
+end
 
 class BaseObject
 
@@ -195,7 +202,7 @@ class EventStoreRepository < BaseObject
     def build(stream)
       obj = type.new stream.first.to_h
       stream[1..-1].each do |event|
-        message = "apply_" + event.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+        message = "apply_" + event.class.name.snake_case
         send message.to_sym, obj, event
       end
       obj
@@ -241,22 +248,6 @@ class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
 
 end
 
-class UpdateRecording < Command
-  attributes :id, :title, :artist
-end
-
-class CreateRecording < Command
-  attributes :id, :title, :artist
-end
-
-class RecordingCreated < Event
-  attributes :id, :title, :artist
-end
-
-class RecordingUpdated < Event
-  attributes :title, :artist
-end
-
 class RecordingRepository < EventStoreRepository
 
   def type
@@ -287,7 +278,7 @@ class RecordingCommandHandler < CommandHandler
 
   def process(command)
     # TODO: - validate command
-    message = "process_" + command.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+    message = "process_" + command.class.name.snake_case
     send message.to_sym, command
   end
 
@@ -308,28 +299,28 @@ class RecordingCommandHandler < CommandHandler
     event = RecordingUpdated.new(attrs)
     repository.append command.id, event
   end
+end
 
+RECORDING_ATTRIBUTES = %I(title artist)
+
+class UpdateRecording < Command
+  attributes :id, *RECORDING_ATTRIBUTES
+end
+
+class CreateRecording < Command
+  attributes :id, *RECORDING_ATTRIBUTES
+end
+
+class RecordingCreated < Event
+  attributes :id, *RECORDING_ATTRIBUTES
+end
+
+class RecordingUpdated < Event
+  attributes(*RECORDING_ATTRIBUTES)
 end
 
 class Recording < Entity
-  attributes :id, :title, :artist
-
-end
-
-class CreateRelease < Command
-  attributes :id, :title
-end
-
-class UpdateRelease < Command
-  attributes :id, :title
-end
-
-class ReleaseCreated < Event
-  attributes :id, :title
-end
-
-class ReleaseUpdated < Event
-  attributes :title
+  attributes :id, *RECORDING_ATTRIBUTES
 end
 
 module CrudAggregate
@@ -340,7 +331,7 @@ module CrudAggregate
     end
 
     def process(command)
-      message = "process_" + command.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+      message = "process_" + command.class.name.snake_case
       send message.to_sym, command
     end
   end
@@ -357,7 +348,7 @@ module CrudAggregate
     othermod.extend ClassMethods
     othermod.include InstanceMethods
 
-    othermod_name = othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+    othermod_name = othermod.name.snake_case
 
     othermod.define_singleton_method("type") { othermod }
 
@@ -385,11 +376,28 @@ module CrudAggregate
   end
 end
 
+RELEASE_ATTRIBUTES = %I(title)
+
 class Release < Entity
-  attributes :id, :title
+  attributes :id, *RELEASE_ATTRIBUTES
 
   include CrudAggregate
+end
 
+class CreateRelease < Command
+  attributes :id, *RELEASE_ATTRIBUTES
+end
+
+class UpdateRelease < Command
+  attributes :id, *RELEASE_ATTRIBUTES
+end
+
+class ReleaseCreated < Event
+  attributes :id, *RELEASE_ATTRIBUTES
+end
+
+class ReleaseUpdated < Event
+  attributes(*RELEASE_ATTRIBUTES)
 end
 
 RecordingProjection = RecordingRepository.new
@@ -435,6 +443,7 @@ class Application < BaseObject
     logg http_request_data.inspect
     command = CreateRelease.new(http_request_data)
     command_handler.handle command
+
     http_request_data = {id: id, title: "Test release updated"}
     logg http_request_data.inspect
     command = UpdateRelease.new(http_request_data)
