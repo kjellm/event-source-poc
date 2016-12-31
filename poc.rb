@@ -67,6 +67,10 @@ class BaseObject
   def registry
     @@registry ||= Registry.new
   end
+
+  def to_h
+    Hash[self.class.attribute_names.map {|name| [name, send(name)] }]
+  end
 end
 
 class Registry < BaseObject
@@ -85,9 +89,8 @@ class Registry < BaseObject
   end
 end
 
-
 class Entity < BaseObject
-  attributes :id
+  # FIXME: attributes :id
 end
 
 class ValueObject < BaseObject
@@ -96,9 +99,6 @@ class ValueObject < BaseObject
     freeze
   end
 
-end
-
-class AggregateRoot < Entity
 end
 
 class Command < BaseObject
@@ -119,6 +119,10 @@ class EventStream < BaseObject
   def append(*events)
     event_sequence.push(*events)
     logg events
+  end
+
+  def to_a
+    @event_sequence.clone
   end
 
   private
@@ -212,8 +216,25 @@ class RecordingRepository < EventStoreRepository
   end
 
   def find(id)
-    registry.event_store.event_stream_for(id)
+    stream = registry.event_store.event_stream_for(id).to_a
+    build stream
   end
+
+  private
+
+  def build(stream)
+    obj = Recording.new stream.first.to_h
+    stream[1..-1].each do |event|
+      message = "apply_" + event.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+      send message.to_sym, obj, event
+    end
+    obj
+  end
+
+  def apply_recording_updated(recording, event)
+    recording.set_attributes(event.to_h)
+  end
+
 end
 
 class RecordingCommandHandler < CommandHandler
@@ -246,8 +267,14 @@ class RecordingCommandHandler < CommandHandler
 
 end
 
-class Recording < AggregateRoot
-  attributes :title, :artist
+class Recording < Entity
+  attributes :id, :title, :artist
+
+  def set_attributes(attrs)
+    #(self.class.attribute_names - [:id]).each do
+    @title = attrs[:title] if attrs.key?(:title)
+    @artist = attrs[:artist] if attrs.key?(:artist)
+  end
 end
 
 class Application < BaseObject
@@ -278,7 +305,9 @@ class Application < BaseObject
     command = UpdateRecording.new(transformed_http_request_data)
     command_handler.handle(command)
 
+    puts
     p registry.event_store
+    p registry.repository_for(Recording).find(id)
   end
 
   private
