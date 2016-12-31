@@ -66,22 +66,18 @@ class BaseObject
     names
   end
 
-  def self.logg(*args)
-    print "#{DateTime.now} - ", *args
-    puts
-  end
+  module ClassAndInstanceMethods
+    def logg(*args)
+      print "#{DateTime.now} - ", *args
+      puts
+    end
 
-  def logg(*args)
-    self.class.logg(*args)
+    def registry
+      @@registry ||= Registry.new
+    end
   end
-
-  def self.registry
-    @@registry ||= Registry.new
-  end
-
-  def registry
-    self.class.registry
-  end
+  include ClassAndInstanceMethods
+  extend ClassAndInstanceMethods
 
   def to_h
     Hash[self.class.attribute_names.map {|name| [name, send(name)] }]
