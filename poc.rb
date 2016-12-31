@@ -357,9 +357,11 @@ module CrudAggregate
     othermod.extend ClassMethods
     othermod.include InstanceMethods
 
+    othermod_name = othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
+
     othermod.define_singleton_method("type") { othermod }
 
-    othermod.define_singleton_method "process_create_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") do |command|
+    othermod.define_singleton_method "process_create_" + othermod_name do |command|
       obj = new(command.to_h)
       obj.assert_validity
       event = self.class.const_get("#{othermod.name}Created").new(command.to_h)
@@ -367,7 +369,7 @@ module CrudAggregate
       repository.append command.id, event
     end
 
-    othermod.define_singleton_method "process_update_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") do |command|
+    othermod.define_singleton_method "process_update_" + othermod_name do |command|
       obj = repository.find command.id
       attrs = command.to_h
       attrs.delete :id
@@ -377,7 +379,7 @@ module CrudAggregate
       repository.append command.id, event
     end
 
-    othermod.define_singleton_method("apply_" + othermod.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_") + "_updated") do |obj, event|
+    othermod.define_singleton_method("apply_" + othermod_name + "_updated") do |obj, event|
       obj.set_attributes(event.to_h)
     end
   end
