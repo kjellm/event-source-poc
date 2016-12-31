@@ -15,19 +15,22 @@ class BaseObject
 
     attr_reader(*names)
 
-    define_method(:attribute_names) { names }
+    define_singleton_method(:attribute_names) { names }
 
     mod = Module.new do
       define_method :initialize do |**attrs|
-        if self.class.superclass.is_a? BaseObject
-          super_attrs = self.class.superclass.attribute_names || []
-          super_given_attrs = {}
-          attrs.keys.each do |an|
-            if super_attrs.include? an
-              super_given_attrs[an] = attrs.delete an
+
+        if self.class.superclass < BaseObject
+          if self.class.superclass.respond_to? :attribute_names
+            super_attrs = self.class.superclass.attribute_names
+            super_given_attrs = {}
+            attrs.keys.each do |an|
+              if super_attrs.include? an
+                super_given_attrs[an] = attrs.delete an
+              end
             end
+            super super_given_attrs
           end
-          super super_given_attrs
         end
 
         mandatory_args_given = mandatory_args & attrs.keys
@@ -129,18 +132,23 @@ class EventStore < BaseObject
     @streams = {}
   end
 
-  def append(type, id, *events)
-    stream = event_stream_for type, id
+  def create(type, id)
+    streams[id] = EventStream.new(type: type)
+  end
+
+  def append(id, *events)
+    stream = streams.fetch id
     stream.append(*events)
+  end
+
+  def event_stream_for(id)
+    streams[id].clone
   end
 
   private
 
   attr_reader :streams
 
-  def event_stream_for(type, id)
-    streams[id] ||= EventStream.new(type: type)
-  end
 end
 
 class EventStoreRepository < BaseObject
@@ -177,24 +185,35 @@ class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
 
 end
 
-class CreateRecording < Command
+class UpdateRecording < Command
   attributes :id, :title, :artist
 end
 
-class UpdateRecording < Command
-  attributes :title, :artist
+class CreateRecording < Command
+  attributes :id, :title, :artist
 end
 
 class RecordingCreated < Event
   attributes :id, :title, :artist
 end
 
+class RecordingUpdated < Event
+  attributes :title, :artist
+end
+
 class RecordingRepository < EventStoreRepository
 
-  def append(id, events)
-    registry.event_store.append Recording, id, events
+  def create(id)
+    registry.event_store.create Recording, id
   end
 
+  def append(id, events)
+    registry.event_store.append id, events
+  end
+
+  def find(id)
+    registry.event_store.event_stream_for(id)
+  end
 end
 
 class RecordingCommandHandler < CommandHandler
@@ -208,14 +227,19 @@ class RecordingCommandHandler < CommandHandler
   def process(command)
     # TODO: - validate command
     #       - validate recording
-    #       - Use repository pattern
-    #       - multiplex
     message = "process_" + command.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
     send message.to_sym, command
   end
 
   def process_create_recording(command)
     event = RecordingCreated.new(id: command.id, title: command.title, artist: command.artist)
+    repository.create command.id
+    repository.append command.id, event
+  end
+
+  def process_update_recording(command)
+    recording = repository.find command.id
+    event = RecordingUpdated.new(title: command.title, artist: command.artist)
     repository.append command.id, event
   end
 
@@ -239,12 +263,21 @@ class Application < BaseObject
   attributes uuid: UUIDGenerator.new
 
   def main
-    http_request_data = {id: uuid.(), title: "A funky tune", artist: "A Funk Odyssey"}
+    id = uuid.()
+    command_handler = registry.command_handler_for(Recording)
+
+    http_request_data = {id: id, title: "A funky tune", artist: "A Funk Odyssey"}
     logg http_request_data.inspect
     transformed_http_request_data = http_request_data
     command = CreateRecording.new(transformed_http_request_data)
-    command_handler = registry.command_handler_for(Recording)
     command_handler.handle(command)
+
+    http_request_data = {id: id, title: "A funky tune (Radio Edit)", artist: "A Funk Odyssey"}
+    logg http_request_data.inspect
+    transformed_http_request_data = http_request_data
+    command = UpdateRecording.new(transformed_http_request_data)
+    command_handler.handle(command)
+
     p registry.event_store
   end
 
