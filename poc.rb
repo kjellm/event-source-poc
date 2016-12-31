@@ -1,10 +1,6 @@
 require 'set'
 require 'date'
 
-# TODO:
-#  - Add some projections
-#  - Add pub/sub
-
 class String
 
   def snake_case
@@ -156,6 +152,11 @@ class EventStore < BaseObject
 
   def initialize
     @streams = {}
+    @subscribers = []
+  end
+
+  def subscribe(subscriber)
+    @subscribers << subscriber
   end
 
   def create(type, id)
@@ -165,6 +166,7 @@ class EventStore < BaseObject
   def append(id, *events)
     stream = streams.fetch id
     stream.append(*events)
+    publish(*events)
   end
 
   def event_stream_for(id)
@@ -173,7 +175,15 @@ class EventStore < BaseObject
 
   private
 
-  attr_reader :streams
+  attr_reader :streams, :subscribers
+
+  def publish(*events)
+    @subscribers.each do |sub|
+      events.each do |e|
+        sub.apply e
+      end
+    end
+  end
 
 end
 
@@ -400,6 +410,23 @@ RecordingProjection = RecordingRepository.new
 
 ReleaseProjection = Release
 
+class RecordingsTotalProjectionClass < BaseObject
+
+  def initialize
+    registry.event_store.subscribe(self)
+    @total = 0
+  end
+
+  def apply(event)
+    @total += 1 if event.class == RecordingCreated
+  end
+
+  attr_reader :total
+
+end
+
+RecordingsTotalProjection = RecordingsTotalProjectionClass.new
+
 class Application < BaseObject
 
   class UUIDGenerator
@@ -448,6 +475,9 @@ class Application < BaseObject
     puts
     p registry.event_store
     p ReleaseProjection.find id
+
+    puts
+    p RecordingsTotalProjection.total
   end
 
   private
