@@ -20,18 +20,19 @@ class BaseObject
     mod = Module.new do
       define_method :initialize do |**attrs|
 
-        if self.class.superclass < BaseObject
-          if self.class.superclass.respond_to? :attribute_names
-            super_attrs = self.class.superclass.attribute_names
-            super_given_attrs = {}
-            attrs.keys.each do |an|
-              if super_attrs.include? an
-                super_given_attrs[an] = attrs.delete an
-              end
-            end
-            super super_given_attrs
-          end
-        end
+        # FIXME: fix inheritance
+        # if self.class.superclass < BaseObject
+        #   if self.class.superclass.respond_to? :attribute_names
+        #     super_attrs = self.class.superclass.attribute_names
+        #     super_given_attrs = {}
+        #     attrs.keys.each do |an|
+        #       if super_attrs.include? an
+        #         super_given_attrs[an] = attrs.delete an
+        #       end
+        #     end
+        #     super super_given_attrs
+        #   end
+        # end
 
         mandatory_args_given = mandatory_args & attrs.keys
 
@@ -91,6 +92,12 @@ end
 
 class Entity < BaseObject
   # FIXME: attributes :id
+
+  def set_attributes(attrs)
+    (self.class.attribute_names - [:id]).each do |name|
+      instance_variable_set(:"@#{name}", attrs[name]) if attrs.key?(name)
+    end
+  end
 end
 
 class ValueObject < BaseObject
@@ -270,11 +277,14 @@ end
 class Recording < Entity
   attributes :id, :title, :artist
 
-  def set_attributes(attrs)
-    #(self.class.attribute_names - [:id]).each do
-    @title = attrs[:title] if attrs.key?(:title)
-    @artist = attrs[:artist] if attrs.key?(:artist)
-  end
+end
+
+
+class RecordingProjection < RecordingRepository
+
+  undef_method :create
+  undef_method :append
+
 end
 
 class Application < BaseObject
@@ -307,7 +317,7 @@ class Application < BaseObject
 
     puts
     p registry.event_store
-    p registry.repository_for(Recording).find(id)
+    p RecordingProjection.new.find(id)
   end
 
   private
