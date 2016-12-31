@@ -112,17 +112,12 @@ class Entity < BaseObject
 end
 
 class ValueObject < BaseObject
-
-  def initialize
-    freeze
-  end
-
 end
 
-class Command < BaseObject
+class Command < ValueObject
 end
 
-class Event < BaseObject
+class Event < ValueObject
 end
 
 class EventStream < BaseObject
@@ -132,6 +127,10 @@ class EventStream < BaseObject
   def initialize(**args)
     super
     @event_sequence = []
+  end
+
+  def version
+    @event_sequence.length
   end
 
   def append(*events)
@@ -163,14 +162,16 @@ class EventStore < BaseObject
     streams[id] = EventStream.new(type: type)
   end
 
-  def append(id, *events)
+  def append(id, expected_version, *events)
     stream = streams.fetch id
+    stream.version == expected_version or
+      raise EventStoreConcurrencyError
     stream.append(*events)
     publish(*events)
   end
 
   def event_stream_for(id)
-    streams[id].clone
+    streams[id]&.clone
   end
 
   private
@@ -187,20 +188,35 @@ class EventStore < BaseObject
 
 end
 
+class UnitOfWork < BaseObject
+
+  def initialize(type, id, expected_version)
+    @id = id
+    @expected_version = expected_version
+    @type = type
+  end
+
+  def create
+    registry.event_store.create @type, @id
+  end
+
+  def append(*events)
+    registry.event_store.append @id, @expected_version, *events
+  end
+end
+
 class EventStoreRepository < BaseObject
 
   module InstanceMethods
-    def create(id)
-      registry.event_store.create type, id
-    end
-
-    def append(id, events)
-      registry.event_store.append id, events
-    end
-
     def find(id)
       stream = registry.event_store.event_stream_for(id).to_a
       build stream
+    end
+
+    def unit_of_work(id)
+      stream = registry.event_store.event_stream_for(id)
+      expected_version = stream&.version || 0
+      yield UnitOfWork.new(type, id, expected_version)
     end
 
     private
@@ -292,8 +308,10 @@ class RecordingCommandHandler < CommandHandler
     recording = Recording.new(command.to_h)
     RecordingValidator.new(recording: recording).assert_validity
     event = RecordingCreated.new(command.to_h)
-    repository.create command.id
-    repository.append command.id, event
+    repository.unit_of_work(command.id) do |uow|
+      uow.create
+      uow.append event
+    end
   end
 
   def process_update_recording(command)
@@ -303,7 +321,9 @@ class RecordingCommandHandler < CommandHandler
     recording.set_attributes attrs
     RecordingValidator.new(recording: recording).assert_validity
     event = RecordingUpdated.new(attrs)
-    repository.append command.id, event
+    repository.unit_of_work(command.id) do |uow|
+      uow.append event
+    end
   end
 end
 
@@ -362,8 +382,10 @@ module CrudAggregate
       obj = new(command.to_h)
       obj.assert_validity
       event = self.class.const_get("#{othermod.name}Created").new(command.to_h)
-      repository.create command.id
-      repository.append command.id, event
+      repository.unit_of_work(command.id) do |uow|
+        uow.create
+        uow.append event
+      end
     end
 
     othermod.define_singleton_method "process_update_" + othermod_name do |command|
@@ -373,7 +395,9 @@ module CrudAggregate
       obj.set_attributes attrs
       obj.assert_validity
       event = self.class.const_get("#{othermod.name}Updated").new(attrs)
-      repository.append command.id, event
+      repository.unit_of_work(command.id) do |uow|
+        uow.append event
+      end
     end
 
     othermod.define_singleton_method("apply_" + othermod_name + "_updated") do |obj, event|
