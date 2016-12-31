@@ -98,6 +98,7 @@ class Entity < BaseObject
       instance_variable_set(:"@#{name}", attrs[name]) if attrs.key?(name)
     end
   end
+
 end
 
 class ValueObject < BaseObject
@@ -244,6 +245,14 @@ class RecordingRepository < EventStoreRepository
 
 end
 
+class RecordingValidator < BaseObject
+
+  attributes :recording
+
+  def assert_validity
+  end
+end
+
 class RecordingCommandHandler < CommandHandler
 
   private
@@ -254,23 +263,27 @@ class RecordingCommandHandler < CommandHandler
 
   def process(command)
     # TODO: - validate command
-    #       - validate recording
     message = "process_" + command.class.name.split(/(?=[A-Z]+)/).map(&:downcase).join("_")
     send message.to_sym, command
   end
 
   def process_create_recording(command)
-    event = RecordingCreated.new(id: command.id, title: command.title, artist: command.artist)
+    recording = Recording.new(command.to_h)
+    RecordingValidator.new(recording: recording).assert_validity
+    event = RecordingCreated.new(command.to_h)
     repository.create command.id
     repository.append command.id, event
   end
 
   def process_update_recording(command)
     recording = repository.find command.id
-    event = RecordingUpdated.new(title: command.title, artist: command.artist)
+    attrs = command.to_h
+    attrs.delete :id
+    recording.set_attributes attrs
+    RecordingValidator.new(recording: recording).assert_validity
+    event = RecordingUpdated.new(attrs)
     repository.append command.id, event
   end
-
 
 end
 
