@@ -23,7 +23,7 @@ class ReleaseCommand < Command
    private
 
   def validate
-    title.strip.empty? and raise "Invalid"
+    title and title.strip.empty? and raise ArgumentError
   end
 end
 
@@ -103,7 +103,8 @@ class RecordingCommand < Command
    private
 
   def validate
-    title.strip.empty? and raise "Invalid"
+    title and title.strip.empty? and raise ArgumentError
+    artist and artist.strip.empty? and raise ArgumentError
   end
 end
 
