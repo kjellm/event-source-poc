@@ -1,6 +1,31 @@
-RecordingProjection = RecordingRepository.new
+require 'forwardable'
 
-ReleaseProjection = Release
+class RepositoryProjection < BaseObject
+  extend Forwardable
+
+  def_delegators :@repository, :find
+
+  def initialize
+    @repository = registry.repository_for type
+  end
+
+end
+
+class RecordingProjectionClass < RepositoryProjection
+
+  def type
+    Recording
+  end
+
+end
+
+class ReleaseProjectionClass < RepositoryProjection
+
+  def type
+    Release
+  end
+
+end
 
 class TotalsProjectionClass < BaseObject
 
@@ -18,4 +43,6 @@ class TotalsProjectionClass < BaseObject
 
 end
 
+RecordingProjection = RecordingProjectionClass.new
+ReleaseProjection = ReleaseProjectionClass.new
 TotalsProjection = TotalsProjectionClass.new

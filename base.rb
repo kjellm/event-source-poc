@@ -88,7 +88,11 @@ class Registry < BaseObject
   end
 
   def repository_for(klass)
-    self.class.const_get("#{klass}Repository").new
+    if klass < CrudAggregate
+      klass
+    else
+      self.class.const_get("#{klass}Repository").new
+    end
   end
 end
 
