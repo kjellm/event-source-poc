@@ -1,3 +1,48 @@
+#
+# R E L E A S E
+#
+# Shows an example of using CrudAggregate. All stuff rolled into one
+# class. Useful for the simplest aggregates that only needs CRUD
+# operations.
+#
+
+RELEASE_ATTRIBUTES = %I(title)
+
+class Release < Entity
+  attributes :id, *RELEASE_ATTRIBUTES
+
+  include CrudAggregate
+
+  private
+
+  def assert_validity
+    # Do something here
+  end
+end
+
+class CreateRelease < Command
+  attributes :id, *RELEASE_ATTRIBUTES
+end
+
+class UpdateRelease < Command
+  attributes :id, *RELEASE_ATTRIBUTES
+end
+
+class ReleaseCreated < Event
+  attributes :id, *RELEASE_ATTRIBUTES
+end
+
+class ReleaseUpdated < Event
+  attributes(*RELEASE_ATTRIBUTES)
+end
+
+#
+# R E C O R D I N G
+#
+# Shows an example where all the different responsibilities are
+# handled by separate objects.
+#
+
 class RecordingRepository < EventStoreRepository
 
   def type
@@ -16,6 +61,7 @@ class RecordingValidator < BaseObject
   end
 
   def assert_validity
+    # Do something here
   end
 end
 
@@ -62,28 +108,4 @@ end
 
 class Recording < Entity
   attributes :id, *RECORDING_ATTRIBUTES
-end
-
-RELEASE_ATTRIBUTES = %I(title)
-
-class Release < Entity
-  attributes :id, *RELEASE_ATTRIBUTES
-
-  include CrudAggregate
-end
-
-class CreateRelease < Command
-  attributes :id, *RELEASE_ATTRIBUTES
-end
-
-class UpdateRelease < Command
-  attributes :id, *RELEASE_ATTRIBUTES
-end
-
-class ReleaseCreated < Event
-  attributes :id, *RELEASE_ATTRIBUTES
-end
-
-class ReleaseUpdated < Event
-  attributes(*RELEASE_ATTRIBUTES)
 end
