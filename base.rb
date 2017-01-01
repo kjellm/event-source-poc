@@ -9,9 +9,9 @@ class String
 
 end
 
-class BaseObject
+module Attributes
 
-  def self.attributes(*mandatory_args, **args_with_defaults)
+    def attributes(*mandatory_args, **args_with_defaults)
     names = [*mandatory_args, *args_with_defaults.keys]
     mandatory_args = Set.new(mandatory_args)
 
@@ -21,20 +21,6 @@ class BaseObject
 
     mod = Module.new do
       define_method :initialize do |**attrs|
-
-        # FIXME: fix inheritance
-        # if self.class.superclass < BaseObject
-        #   if self.class.superclass.respond_to? :attribute_names
-        #     super_attrs = self.class.superclass.attribute_names
-        #     super_given_attrs = {}
-        #     attrs.keys.each do |an|
-        #       if super_attrs.include? an
-        #         super_given_attrs[an] = attrs.delete an
-        #       end
-        #     end
-        #     super super_given_attrs
-        #   end
-        # end
 
         mandatory_args_given = mandatory_args & attrs.keys
 
@@ -61,6 +47,12 @@ class BaseObject
 
     names
   end
+
+end
+
+class BaseObject
+
+  extend Attributes
 
   module ClassAndInstanceMethods
     def logg(*args)
