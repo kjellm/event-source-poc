@@ -12,40 +12,33 @@ end
 
 class RecordingValidator < BaseObject
 
-  attributes :recording
+  def initialize(obj)
+  end
 
   def assert_validity
   end
 end
 
-class RecordingCommandHandler < CommandHandler
+class RecordingCommandHandler < CrudCommandHandler
 
   private
+
+  def type; Recording; end
 
   def repository
     @repository ||= registry.repository_for(Recording)
   end
 
+  def validator(obj)
+    RecordingValidator.new(obj)
+  end
+
   def process_create_recording(command)
-    recording = Recording.new(command.to_h)
-    RecordingValidator.new(recording: recording).assert_validity
-    event = RecordingCreated.new(command.to_h)
-    repository.unit_of_work(command.id) do |uow|
-      uow.create
-      uow.append event
-    end
+    process_create(command)
   end
 
   def process_update_recording(command)
-    recording = repository.find command.id
-    attrs = command.to_h
-    attrs.delete :id
-    recording.set_attributes attrs
-    RecordingValidator.new(recording: recording).assert_validity
-    event = RecordingUpdated.new(attrs)
-    repository.unit_of_work(command.id) do |uow|
-      uow.append event
-    end
+    process_update(command)
   end
 end
 
