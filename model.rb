@@ -13,8 +13,6 @@ class Release < Entity
 
   include CrudAggregate
 
-  private
-
   def assert_validity
     # Do something here
   end
