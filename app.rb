@@ -1,21 +1,7 @@
+require_relative 'base'
 require_relative 'poc'
-
-class RecordingsTotalProjectionClass < BaseObject
-
-  def initialize
-    registry.event_store.subscribe(self)
-    @total = 0
-  end
-
-  def apply(event)
-    @total += 1 if event.class == RecordingCreated
-  end
-
-  attr_reader :total
-
-end
-
-RecordingsTotalProjection = RecordingsTotalProjectionClass.new
+require_relative 'model'
+require_relative 'read'
 
 class Application < BaseObject
 
