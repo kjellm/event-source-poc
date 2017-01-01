@@ -11,7 +11,7 @@ end
 
 module Attributes
 
-    def attributes(*mandatory_args, **args_with_defaults)
+  def attributes(*mandatory_args, **args_with_defaults)
     names = [*mandatory_args, *args_with_defaults.keys]
     mandatory_args = Set.new(mandatory_args)
 
