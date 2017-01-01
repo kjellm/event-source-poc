@@ -55,7 +55,7 @@ class Application < BaseObject
     p ReleaseProjection.find id
 
     puts
-    p RecordingsTotalProjection.total
+    p TotalsProjection.totals
   end
 
   private

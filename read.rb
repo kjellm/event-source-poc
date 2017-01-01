@@ -2,19 +2,20 @@ RecordingProjection = RecordingRepository.new
 
 ReleaseProjection = Release
 
-class RecordingsTotalProjectionClass < BaseObject
+class TotalsProjectionClass < BaseObject
 
   def initialize
     registry.event_store.subscribe(self)
-    @total = 0
+    @totals = Hash.new(0)
   end
 
   def apply(event)
-    @total += 1 if event.class == RecordingCreated
+    return unless [RecordingCreated, ReleaseCreated].include? event.class
+    @totals[event.class] += 1
   end
 
-  attr_reader :total
+  attr_reader :totals
 
 end
 
-RecordingsTotalProjection = RecordingsTotalProjectionClass.new
+TotalsProjection = TotalsProjectionClass.new
