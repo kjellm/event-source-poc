@@ -22,16 +22,16 @@ class CreateRelease < Command
   attributes :id, *RELEASE_ATTRIBUTES
 end
 
-class UpdateRelease < Command
-  attributes :id, *RELEASE_ATTRIBUTES
-end
-
 class ReleaseCreated < Event
   attributes :id, *RELEASE_ATTRIBUTES
 end
 
+class UpdateRelease < Command
+  attributes :id, Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
+end
+
 class ReleaseUpdated < Event
-  attributes(*RELEASE_ATTRIBUTES)
+  attributes Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
 end
 
 #
@@ -88,10 +88,6 @@ end
 
 RECORDING_ATTRIBUTES = %I(title artist)
 
-class UpdateRecording < Command
-  attributes :id, *RECORDING_ATTRIBUTES
-end
-
 class CreateRecording < Command
   attributes :id, *RECORDING_ATTRIBUTES
 end
@@ -100,8 +96,12 @@ class RecordingCreated < Event
   attributes :id, *RECORDING_ATTRIBUTES
 end
 
+class UpdateRecording < Command
+  attributes :id, Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
+end
+
 class RecordingUpdated < Event
-  attributes(*RECORDING_ATTRIBUTES)
+  attributes Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
 end
 
 class Recording < Entity

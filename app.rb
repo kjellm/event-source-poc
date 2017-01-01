@@ -20,16 +20,16 @@ class Application < BaseObject
   def main
     recording_id = uuid.()
     command_handler = registry.command_handler_for(Recording)
-    run({id: recording_id, title: "A funky tune", artist: "A Funk Odyssey"},
+    run({id: recording_id, title: "Sledge Hammer", artist: "Peter Gabriel"},
         CreateRecording, command_handler)
-    run({id: recording_id, title: "A funky tune (Radio Edit)", artist: "A Funk Odyssey"},
+    run({id: recording_id, title: "Sledge Hammer (Radio Edit)"},
         UpdateRecording, command_handler)
 
     release_id = uuid.()
     command_handler = registry.command_handler_for(Release)
-    run({id: release_id, title: "Test release"},
+    run({id: release_id, title: "So"},
         CreateRelease, command_handler)
-    run({id: release_id, title: "Test release updated"},
+    run({id: release_id, title: "So (Remastered)"},
         UpdateRelease, command_handler)
 
     puts
