@@ -26,12 +26,6 @@ class RecordingCommandHandler < CommandHandler
     @repository ||= registry.repository_for(Recording)
   end
 
-  def process(command)
-    # TODO: - validate command
-    message = "process_" + command.class.name.snake_case
-    send message.to_sym, command
-  end
-
   def process_create_recording(command)
     recording = Recording.new(command.to_h)
     RecordingValidator.new(recording: recording).assert_validity

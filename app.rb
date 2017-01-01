@@ -1,5 +1,7 @@
 require_relative 'base'
-require_relative 'poc'
+require_relative 'event'
+require_relative 'cmd'
+require_relative 'crud'
 require_relative 'model'
 require_relative 'read'
 
