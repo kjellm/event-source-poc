@@ -1,4 +1,16 @@
 class Command < ValueObject
+
+  def initialize
+    super
+    validate
+  end
+
+  private
+
+  def validate
+    raise "Implement in subclass! #{self.class.name}"
+  end
+
 end
 
 class CommandHandler < BaseObject

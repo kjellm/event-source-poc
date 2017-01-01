@@ -40,6 +40,7 @@ module Attributes
             instance_variable_set "@#{name}", value
           end
         end
+        super()
       end
     end
 

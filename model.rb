@@ -18,15 +18,25 @@ class Release < Entity
   end
 end
 
-class CreateRelease < Command
+class ReleaseCommand < Command
+
+   private
+
+  def validate
+    title.strip.empty? and raise "Invalid"
+  end
+end
+
+class CreateRelease < ReleaseCommand
   attributes :id, *RELEASE_ATTRIBUTES
+
 end
 
 class ReleaseCreated < Event
   attributes :id, *RELEASE_ATTRIBUTES
 end
 
-class UpdateRelease < Command
+class UpdateRelease < ReleaseCommand
   attributes :id, Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
 end
 
@@ -88,7 +98,16 @@ end
 
 RECORDING_ATTRIBUTES = %I(title artist)
 
-class CreateRecording < Command
+class RecordingCommand < Command
+
+   private
+
+  def validate
+    title.strip.empty? and raise "Invalid"
+  end
+end
+
+class CreateRecording < RecordingCommand
   attributes :id, *RECORDING_ATTRIBUTES
 end
 
@@ -96,7 +115,7 @@ class RecordingCreated < Event
   attributes :id, *RECORDING_ATTRIBUTES
 end
 
-class UpdateRecording < Command
+class UpdateRecording < RecordingCommand
   attributes :id, Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
 end
 
