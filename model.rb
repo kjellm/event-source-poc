@@ -22,8 +22,8 @@ class ReleaseCommand < Command
 
    private
 
-  def validate
-    title and title.strip.empty? and raise ArgumentError
+   def validate
+     non_blank_string(title)
   end
 end
 
@@ -103,8 +103,8 @@ class RecordingCommand < Command
    private
 
   def validate
-    title and title.strip.empty? and raise ArgumentError
-    artist and artist.strip.empty? and raise ArgumentError
+    non_blank_string(title)
+    non_blank_string(artist)
   end
 end
 

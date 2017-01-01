@@ -11,6 +11,12 @@ class Command < ValueObject
     raise "Implement in subclass! #{self.class.name}"
   end
 
+  def non_blank_string(obj)
+    return unless obj
+    obj.is_a?(String) && !obj.strip.empty? or
+      raise ArgumentError
+  end
+
 end
 
 class CommandHandler < BaseObject
