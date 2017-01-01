@@ -61,6 +61,10 @@ class EventStore < BaseObject
     streams[id]&.clone
   end
 
+  def event_stream_version_for(id)
+    streams[id]&.version || 0
+  end
+
   private
 
   attr_reader :streams, :subscribers
@@ -102,8 +106,7 @@ class EventStoreRepository < BaseObject
     end
 
     def unit_of_work(id)
-      stream = registry.event_store.event_stream_for(id)
-      expected_version = stream&.version || 0
+      expected_version = registry.event_store.event_stream_version_for(id)
       yield UnitOfWork.new(type, id, expected_version)
     end
 
