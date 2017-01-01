@@ -22,7 +22,6 @@ class Application < BaseObject
     command_handler = registry.command_handler_for(Recording)
     run({id: recording_id, title: "A funky tune", artist: "A Funk Odyssey"},
         CreateRecording, command_handler)
-
     run({id: recording_id, title: "A funky tune (Radio Edit)", artist: "A Funk Odyssey"},
         UpdateRecording, command_handler)
 
