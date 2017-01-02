@@ -31,6 +31,8 @@ class Application < BaseObject
         CreateRelease, command_handler)
     run({id: release_id, title: "So (Remastered)"},
         UpdateRelease, command_handler)
+    run({id: release_id, title: "Shaking The Tree"},
+        CreateRelease, command_handler)
 
     puts
     p registry.event_store
