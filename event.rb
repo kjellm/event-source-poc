@@ -38,14 +38,10 @@ class EventStore < BaseObject
 
   def initialize
     @streams = {}
-    @subscribers = []
-  end
-
-  def subscribe(subscriber)
-    @subscribers << subscriber
   end
 
   def create(type, id)
+    raise EventSourceError, "Stream exists for #{type} #{id}" if streams.key? id
     streams[id] = EventStream.new(type: type)
   end
 
@@ -54,7 +50,6 @@ class EventStore < BaseObject
     stream.version == expected_version or
       raise EventStoreConcurrencyError
     stream.append(*events)
-    publish(*events)
   end
 
   def event_stream_for(id)
@@ -67,7 +62,29 @@ class EventStore < BaseObject
 
   private
 
-  attr_reader :streams, :subscribers
+  attr_reader :streams
+
+end
+
+class EventStorePubSubDecorator < DelegateClass(EventStore)
+
+  def initialize(obj)
+    super
+    @subscribers = []
+  end
+
+  def subscribe(subscriber)
+    @subscribers << subscriber
+  end
+
+  def append(id, expected_version, *events)
+    super
+    publish(*events)
+  end
+
+  private
+
+  attr_reader :subscribers
 
   def publish(*events)
     @subscribers.each do |sub|
@@ -76,6 +93,7 @@ class EventStore < BaseObject
       end
     end
   end
+
 
 end
 
