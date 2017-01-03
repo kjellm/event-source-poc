@@ -22,16 +22,21 @@ end
 
 class ReleaseCommand < Command
 
-   private
+  private
 
-   def validate
-     non_blank_string(title)
+  def validate
+    non_blank_string(title)
+    required(id)
   end
 end
 
 class CreateRelease < ReleaseCommand
   attributes :id, *RELEASE_ATTRIBUTES
 
+  def validate
+    super
+    required(*RELEASE_ATTRIBUTES.map {|m| send m})
+  end
 end
 
 class ReleaseCreated < Event
@@ -108,11 +113,17 @@ class RecordingCommand < Command
     non_blank_string(title)
     non_blank_string(artist)
     positive_integer(duration)
+    required(id)
   end
 end
 
 class CreateRecording < RecordingCommand
   attributes :id, *RECORDING_ATTRIBUTES
+
+  def validate
+    super
+    required(*RECORDING_ATTRIBUTES.map {|m| send m})
+  end
 end
 
 class RecordingCreated < Event
