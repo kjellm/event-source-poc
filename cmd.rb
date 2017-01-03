@@ -55,17 +55,17 @@ class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
 
   def handle(command)
     before_handle(command)
-    __getobj__.handle(command)
+    super
   ensure
     after_handle(command)
   end
 
   def before_handle(command)
-    logg command.inspect
+    logg "Start handling: #{command.inspect}"
   end
 
   def after_handle(command)
-    logg "Done: #{command.inspect}"
+    logg "Done handling: #{command.inspect}"
   end
 
 end

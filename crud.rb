@@ -29,7 +29,6 @@ class CrudCommandHandler < CommandHandler
       obj = repository.find command.id
       obj.set_attributes command.to_h
       validator(obj).assert_validity
-      p command.to_h
       event = self.class.const_get("#{type}Updated").new(command.to_h)
       repository.unit_of_work(command.id) do |uow|
         uow.append event

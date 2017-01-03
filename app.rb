@@ -41,10 +41,12 @@ class Application < BaseObject
   private
 
   def run(request_data, command_class, aggregate)
-    logg request_data.inspect
+    logg "Incoming request with data: #{request_data.inspect}"
     command_handler = registry.command_handler_for(aggregate)
     command = command_class.new(request_data)
     command_handler.handle command
+  rescue StandardError => e
+    logg "Command failed because of: #{e}"
   end
 
 end

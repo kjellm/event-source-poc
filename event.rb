@@ -22,7 +22,7 @@ class EventStream < BaseObject
 
   def append(*events)
     event_sequence.push(*events)
-    logg events
+    logg "New events: #{events}"
   end
 
   def to_a
