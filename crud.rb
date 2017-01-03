@@ -92,13 +92,17 @@ end
 module UpdateCommandOrEvent
   def initialize(attrs)
     super
-    @__attributes_given = attrs.keys
+    @attributes_given = attrs.keys
   end
 
   def to_h
     h = super
-    h.slice(*@__attributes_given)
+    h.slice(*attributes_given)
   end
+
+  private
+
+  attr_reader :attributes_given
 end
 
 class UpdateEvent < Event
