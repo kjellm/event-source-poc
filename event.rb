@@ -119,8 +119,9 @@ class EventStoreRepository < BaseObject
 
   module InstanceMethods
     def find(id)
-      stream = registry.event_store.event_stream_for(id).to_a
-      build stream
+      stream = registry.event_store.event_stream_for(id)
+      return if stream.nil?
+      build stream.to_a
     end
 
     def unit_of_work(id)

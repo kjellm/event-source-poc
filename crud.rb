@@ -27,6 +27,7 @@ class CrudCommandHandler < CommandHandler
 
     def process_update(command)
       obj = repository.find command.id
+      raise ArgumentError if obj.nil?
       obj.set_attributes command.to_h
       validator(obj).assert_validity
       event = self.class.const_get("#{type}Updated").new(command.to_h)

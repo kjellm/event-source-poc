@@ -26,6 +26,9 @@ class Application < BaseObject
     run({id: recording_id, title: "Sledgehammer"},
         UpdateRecording, Recording)
 
+    # Some failing commands
+    run({id: "Non-existing ID", title: "Foobar"},
+        UpdateRecording, Recording)
 
     puts
     puts "EVENT STORE ------------------------------------------------"
@@ -46,7 +49,7 @@ class Application < BaseObject
     command = command_class.new(request_data)
     command_handler.handle command
   rescue StandardError => e
-    logg "Command failed because of: #{e}"
+    logg "Command #{command} failed because of: #{e}"
   end
 
 end
