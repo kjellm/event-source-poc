@@ -17,6 +17,11 @@ class Command < ValueObject
       raise ArgumentError
   end
 
+  def positive_integer(obj)
+    return unless obj
+    obj.is_a?(Integer) && obj > 0 or
+      raise ArgumentError
+  end
 end
 
 class CommandHandler < BaseObject

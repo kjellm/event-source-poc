@@ -20,10 +20,9 @@ class Application < BaseObject
   def main
     recording_id = uuid.()
     command_handler = registry.command_handler_for(Recording)
-    run({id: recording_id, title: "Sledge Hammer", artist: "Peter Gabriel"},
+    run({id: recording_id, title: "Sledge Hammer", artist: "Peter Gabriel",
+         duration: 313},
         CreateRecording, command_handler)
-    run({id: recording_id, title: "Sledge Hammer (Radio Edit)"},
-        UpdateRecording, command_handler)
 
     release_id = uuid.()
     command_handler = registry.command_handler_for(Release)
@@ -33,6 +32,10 @@ class Application < BaseObject
         UpdateRelease, command_handler)
     run({id: uuid.(), title: "Shaking The Tree"},
         CreateRelease, command_handler)
+
+
+    run({id: recording_id, title: "Sledgehammer"},
+        UpdateRecording, command_handler)
 
     puts
     p registry.event_store

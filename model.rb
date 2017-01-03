@@ -1,6 +1,8 @@
 #
 # R E L E A S E
 #
+# a.k.a. Album
+#
 # Shows an example of using CrudAggregate. All stuff rolled into one
 # class. Useful for the simplest aggregates that only needs CRUD
 # operations.
@@ -96,7 +98,7 @@ class RecordingCommandHandler < CrudCommandHandler
   end
 end
 
-RECORDING_ATTRIBUTES = %I(title artist)
+RECORDING_ATTRIBUTES = %I(title artist duration)
 
 class RecordingCommand < Command
 
@@ -105,6 +107,7 @@ class RecordingCommand < Command
   def validate
     non_blank_string(title)
     non_blank_string(artist)
+    positive_integer(duration)
   end
 end
 
