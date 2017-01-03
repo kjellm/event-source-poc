@@ -7,8 +7,12 @@ class RepositoryProjection < BaseObject
   end
 
   def find(id)
-    @repository.find(id).to_h
+    repository.find(id).to_h
   end
+
+  private
+
+  attr_reader :repository
 
 end
 
