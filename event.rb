@@ -74,7 +74,7 @@ class EventStorePubSubDecorator < DelegateClass(EventStore)
   end
 
   def subscribe(subscriber)
-    @subscribers << subscriber
+    subscribers << subscriber
   end
 
   def append(id, expected_version, *events)
@@ -87,7 +87,7 @@ class EventStorePubSubDecorator < DelegateClass(EventStore)
   attr_reader :subscribers
 
   def publish(*events)
-    @subscribers.each do |sub|
+    subscribers.each do |sub|
       events.each do |e|
         sub.apply e
       end

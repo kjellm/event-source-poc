@@ -92,12 +92,12 @@ end
 module UpdateCommandOrEvent
   def initialize(attrs)
     super
-    @_attributes = attrs.keys
+    @__attributes_given = attrs.keys
   end
 
   def to_h
     h = super
-    h.slice(*@_attributes)
+    h.slice(*@__attributes_given)
   end
 end
 
