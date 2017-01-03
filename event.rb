@@ -99,10 +99,10 @@ end
 
 class UnitOfWork < BaseObject
 
-  def initialize(type, id, expected_version)
+  def initialize(type, id)
     @id = id
-    @expected_version = expected_version
     @type = type
+    @expected_version = registry.event_store.event_stream_version_for(id)
   end
 
   def create
@@ -124,8 +124,7 @@ class EventStoreRepository < BaseObject
     end
 
     def unit_of_work(id)
-      expected_version = registry.event_store.event_stream_version_for(id)
-      yield UnitOfWork.new(type, id, expected_version)
+      yield UnitOfWork.new(type, id)
     end
 
     private
