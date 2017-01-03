@@ -26,7 +26,6 @@ class ReleaseCommand < Command
 
   def validate
     non_blank_string(title)
-    required(id)
   end
 end
 
@@ -113,7 +112,6 @@ class RecordingCommand < Command
     non_blank_string(title)
     non_blank_string(artist)
     positive_integer(duration)
-    required(id)
   end
 end
 

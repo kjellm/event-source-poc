@@ -8,7 +8,7 @@ class Command < ValueObject
   private
 
   def validate
-    raise "Implement in subclass! #{self.class.name}"
+    required id
   end
 
   def required(*values)
