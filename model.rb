@@ -8,10 +8,10 @@
 # operations.
 #
 
-RELEASE_ATTRIBUTES = %I(title)
+RELEASE_ATTRIBUTES = %I(id title tracks)
 
 class Release < Entity
-  attributes :id, *RELEASE_ATTRIBUTES
+  attributes *RELEASE_ATTRIBUTES
 
   include CrudAggregate
 
@@ -30,7 +30,7 @@ class ReleaseCommand < Command
 end
 
 class CreateRelease < ReleaseCommand
-  attributes :id, *RELEASE_ATTRIBUTES
+  attributes *RELEASE_ATTRIBUTES
 
   def validate
     super
@@ -39,14 +39,20 @@ class CreateRelease < ReleaseCommand
 end
 
 class ReleaseCreated < Event
-  attributes :id, *RELEASE_ATTRIBUTES
+  attributes *RELEASE_ATTRIBUTES
 end
 
 class UpdateRelease < ReleaseCommand
-  attributes :id, Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
+  attributes Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
+
+  def to_h
+    h = super
+    h.slice(*@_attributes)
+  end
+
 end
 
-class ReleaseUpdated < Event
+class ReleaseUpdated < UpdateEvent
   attributes Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
 end
 
@@ -102,7 +108,7 @@ class RecordingCommandHandler < CrudCommandHandler
   end
 end
 
-RECORDING_ATTRIBUTES = %I(title artist duration)
+RECORDING_ATTRIBUTES = %I(id title artist duration)
 
 class RecordingCommand < Command
 
@@ -116,7 +122,7 @@ class RecordingCommand < Command
 end
 
 class CreateRecording < RecordingCommand
-  attributes :id, *RECORDING_ATTRIBUTES
+  attributes *RECORDING_ATTRIBUTES
 
   def validate
     super
@@ -125,17 +131,23 @@ class CreateRecording < RecordingCommand
 end
 
 class RecordingCreated < Event
-  attributes :id, *RECORDING_ATTRIBUTES
+  attributes *RECORDING_ATTRIBUTES
 end
 
 class UpdateRecording < RecordingCommand
-  attributes :id, Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
+  attributes Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
+
+  def to_h
+    h = super
+    h.slice(*@_attributes)
+  end
+
 end
 
-class RecordingUpdated < Event
+class RecordingUpdated < UpdateEvent
   attributes Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
 end
 
 class Recording < Entity
-  attributes :id, *RECORDING_ATTRIBUTES
+  attributes *RECORDING_ATTRIBUTES
 end

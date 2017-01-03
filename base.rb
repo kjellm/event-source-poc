@@ -10,6 +10,16 @@ class String
 
 end
 
+class Hash
+
+  def slice(*keys)
+    keys.each_with_object(self.class.new) do
+      |k, hash| hash[k] = self[k] if has_key?(k)
+    end
+  end
+
+end
+
 module UUID
 
   def self.generate
@@ -39,7 +49,7 @@ module Attributes
 
     mod = Module.new do
       define_method :initialize do |**attrs|
-
+        @_attributes = attrs.keys
         mandatory_args_given = mandatory_args & attrs.keys
 
         unless mandatory_args_given == mandatory_args
@@ -116,7 +126,6 @@ class Registry < BaseObject
 end
 
 class Entity < BaseObject
-  # FIXME: attributes :id
 
   def set_attributes(attrs)
     (self.class.attribute_names - [:id]).each do |name|

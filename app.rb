@@ -19,11 +19,12 @@ class Application < BaseObject
 
     release_id = UUID.generate
     command_handler = registry.command_handler_for(Release)
-    run({id: release_id, title: "So"},
+    run({id: release_id, title: "So", tracks: []},
         CreateRelease, command_handler)
-    run({id: release_id, title: "So (Remastered)"},
+    run({id: release_id, tracks: [recording_id]},
         UpdateRelease, command_handler)
-    run({id: UUID.generate, title: "Shaking The Tree"},
+    run({id: UUID.generate, title: "Shaking The Tree",
+         tracks: [recording_id]},
         CreateRelease, command_handler)
 
 

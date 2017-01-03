@@ -27,10 +27,10 @@ class CrudCommandHandler < CommandHandler
 
     def process_update(command)
       obj = repository.find command.id
-      attrs = command_to_update_attrs(command)
-      obj.set_attributes attrs
+      obj.set_attributes command.to_h
       validator(obj).assert_validity
-      event = self.class.const_get("#{type}Updated").new(attrs)
+      p command.to_h
+      event = self.class.const_get("#{type}Updated").new(command.to_h)
       repository.unit_of_work(command.id) do |uow|
         uow.append event
       end
@@ -87,4 +87,13 @@ module CrudAggregate
       obj.set_attributes(event.to_h)
     end
   end
+end
+
+class UpdateEvent < Event
+
+  def to_h
+    h = super
+    h.slice(*@_attributes)
+  end
+
 end

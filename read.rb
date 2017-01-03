@@ -19,12 +19,33 @@ class RecordingProjectionClass < RepositoryProjection
 
 end
 
-class ReleaseProjectionClass < RepositoryProjection
+class ReleaseProjectionClass < BaseObject
 
-  def type
-    Release
+  def initialize
+    registry.event_store.subscribe(self)
+    @releases = {}
   end
 
+  def find(id)
+    @releases[id].clone
+  end
+
+  def apply(event)
+    case event
+    when ReleaseCreated
+      release = event.to_h
+      release.fetch(:tracks).map! { |id| RecordingProjection.find(id).to_h }
+      @releases[event.id] = release
+    when ReleaseUpdated
+      release = event.to_h
+      release[:tracks]&.map! { |id| RecordingProjection.find(id).to_h }
+      @releases[event.id].merge! release
+    when RecordingUpdated
+      @releases.each do |r|
+        r.fetch(:tracks).map! { |track| RecordingProjection.find(track.id).to_h }
+      end
+    end
+  end
 end
 
 class TotalsProjectionClass < BaseObject
