@@ -1,5 +1,6 @@
 require 'set'
 require 'date'
+require 'securerandom'
 
 class String
 
@@ -8,6 +9,23 @@ class String
   end
 
 end
+
+module UUID
+
+  def self.generate
+    SecureRandom.uuid
+  end
+
+  def self.as_int(uuid)
+    Integer(uuid.split("-").join, 16)
+  end
+
+  def self.from_int(int)
+    int.to_s(16).rjust(32, '0').split(/(\h{8})(\h{4})(\h{4})(\h{4})(\h{12})/)[1..-1].join("-")
+  end
+
+end
+
 
 module Attributes
 

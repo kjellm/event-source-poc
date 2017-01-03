@@ -7,35 +7,25 @@ require_relative 'read'
 
 class Application < BaseObject
 
-  class UUIDGenerator
-
-    def call
-      @seq ||= 0
-      @seq += 1
-    end
-  end
-
-  attributes uuid: UUIDGenerator.new
-
   def main
-    recording_id = uuid.()
+    recording_id = UUID.generate
     command_handler = registry.command_handler_for(Recording)
     run({id: recording_id, title: "Sledge Hammer", artist: "Peter Gabriel",
          duration: 313},
         CreateRecording, command_handler)
 
-    release_id = uuid.()
+    run({id: recording_id, title: "Sledgehammer"},
+        UpdateRecording, command_handler)
+
+    release_id = UUID.generate
     command_handler = registry.command_handler_for(Release)
     run({id: release_id, title: "So"},
         CreateRelease, command_handler)
     run({id: release_id, title: "So (Remastered)"},
         UpdateRelease, command_handler)
-    run({id: uuid.(), title: "Shaking The Tree"},
+    run({id: UUID.generate, title: "Shaking The Tree"},
         CreateRelease, command_handler)
 
-
-    run({id: recording_id, title: "Sledgehammer"},
-        UpdateRecording, command_handler)
 
     puts
     p registry.event_store
@@ -45,8 +35,6 @@ class Application < BaseObject
   end
 
   private
-
-  attr_reader :uuid
 
   def run(request_data, command_class, command_handler)
     logg request_data.inspect
