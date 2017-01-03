@@ -8,28 +8,31 @@ require_relative 'read'
 class Application < BaseObject
 
   def main
+    puts "LOGG ---------------------------------------------------------"
     recording_id = UUID.generate
-    command_handler = registry.command_handler_for(Recording)
     run({id: recording_id, title: "Sledge Hammer", artist: "Peter Gabriel",
          duration: 313},
-        CreateRecording, command_handler)
-
-    run({id: recording_id, title: "Sledgehammer"},
-        UpdateRecording, command_handler)
+        CreateRecording, Recording)
 
     release_id = UUID.generate
-    command_handler = registry.command_handler_for(Release)
     run({id: release_id, title: "So", tracks: []},
-        CreateRelease, command_handler)
+        CreateRelease, Release)
     run({id: release_id, tracks: [recording_id]},
-        UpdateRelease, command_handler)
+        UpdateRelease, Release)
     run({id: UUID.generate, title: "Shaking The Tree",
          tracks: [recording_id]},
-        CreateRelease, command_handler)
+        CreateRelease, Release)
+
+    run({id: recording_id, title: "Sledgehammer"},
+        UpdateRecording, Recording)
 
 
     puts
+    puts "EVENT STORE ------------------------------------------------"
     p registry.event_store
+
+    puts
+    puts "PROJECTIONS ------------------------------------------------"
     p ReleaseProjection.find release_id
     p RecordingProjection.find recording_id
     p TotalsProjection.totals
@@ -37,8 +40,9 @@ class Application < BaseObject
 
   private
 
-  def run(request_data, command_class, command_handler)
+  def run(request_data, command_class, aggregate)
     logg request_data.inspect
+    command_handler = registry.command_handler_for(aggregate)
     command = command_class.new(request_data)
     command_handler.handle command
   end

@@ -89,11 +89,22 @@ module CrudAggregate
   end
 end
 
-class UpdateEvent < Event
+module UpdateCommandOrEvent
+  def initialize(attrs)
+    super
+    @_attributes = attrs.keys
+  end
 
   def to_h
     h = super
     h.slice(*@_attributes)
   end
+end
 
+class UpdateEvent < Event
+  include UpdateCommandOrEvent
+end
+
+class UpdateCommand < Command
+  include UpdateCommandOrEvent
 end

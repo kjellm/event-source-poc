@@ -1,12 +1,13 @@
 require 'forwardable'
 
 class RepositoryProjection < BaseObject
-  extend Forwardable
-
-  def_delegators :@repository, :find
 
   def initialize
     @repository = registry.repository_for type
+  end
+
+  def find(id)
+    @repository.find(id).to_h
   end
 
 end
@@ -41,8 +42,8 @@ class ReleaseProjectionClass < BaseObject
       release[:tracks]&.map! { |id| RecordingProjection.find(id).to_h }
       @releases[event.id].merge! release
     when RecordingUpdated
-      @releases.each do |r|
-        r.fetch(:tracks).map! { |track| RecordingProjection.find(track.id).to_h }
+      @releases.values.each do |r|
+        r.fetch(:tracks).map! { |track| RecordingProjection.find(track.fetch(:id)).to_h }
       end
     end
   end

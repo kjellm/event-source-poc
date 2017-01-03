@@ -20,7 +20,7 @@ class Release < Entity
   end
 end
 
-class ReleaseCommand < Command
+module ReleaseCommandValidation
 
   private
 
@@ -29,8 +29,10 @@ class ReleaseCommand < Command
   end
 end
 
-class CreateRelease < ReleaseCommand
+class CreateRelease < Command
   attributes *RELEASE_ATTRIBUTES
+
+  include ReleaseCommandValidation
 
   def validate
     super
@@ -42,13 +44,10 @@ class ReleaseCreated < Event
   attributes *RELEASE_ATTRIBUTES
 end
 
-class UpdateRelease < ReleaseCommand
+class UpdateRelease < UpdateCommand
   attributes Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
 
-  def to_h
-    h = super
-    h.slice(*@_attributes)
-  end
+  include ReleaseCommandValidation
 
 end
 
@@ -110,9 +109,9 @@ end
 
 RECORDING_ATTRIBUTES = %I(id title artist duration)
 
-class RecordingCommand < Command
+module RecordingCommandValidation
 
-   private
+  private
 
   def validate
     non_blank_string(title)
@@ -121,8 +120,10 @@ class RecordingCommand < Command
   end
 end
 
-class CreateRecording < RecordingCommand
+class CreateRecording < Command
   attributes *RECORDING_ATTRIBUTES
+
+  include RecordingCommandValidation
 
   def validate
     super
@@ -134,14 +135,9 @@ class RecordingCreated < Event
   attributes *RECORDING_ATTRIBUTES
 end
 
-class UpdateRecording < RecordingCommand
+class UpdateRecording < UpdateCommand
   attributes Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
-
-  def to_h
-    h = super
-    h.slice(*@_attributes)
-  end
-
+  include RecordingCommandValidation
 end
 
 class RecordingUpdated < UpdateEvent

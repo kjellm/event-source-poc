@@ -1,6 +1,6 @@
 class Command < ValueObject
 
-  def initialize
+  def initialize(*args)
     super
     validate
   end

@@ -49,7 +49,6 @@ module Attributes
 
     mod = Module.new do
       define_method :initialize do |**attrs|
-        @_attributes = attrs.keys
         mandatory_args_given = mandatory_args & attrs.keys
 
         unless mandatory_args_given == mandatory_args
@@ -68,7 +67,7 @@ module Attributes
             instance_variable_set "@#{name}", value
           end
         end
-        super()
+        super(**attrs)
       end
     end
 
@@ -82,6 +81,9 @@ end
 class BaseObject
 
   extend Attributes
+
+  def initialize(*_args)
+  end
 
   module ClassAndInstanceMethods
     def logg(*args)
