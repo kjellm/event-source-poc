@@ -28,6 +28,7 @@ class CrudCommandHandler < CommandHandler
     def process_update(command)
       obj = repository.find command.id
       raise ArgumentError if obj.nil?
+      raise ArgumentError if obj.id != command.id
       obj.set_attributes command.to_h
       validator(obj).assert_validity
       event = self.class.const_get("#{type}Updated").new(command.to_h)
@@ -36,11 +37,6 @@ class CrudCommandHandler < CommandHandler
       end
     end
 
-    def command_to_update_attrs(command)
-      attrs = command.to_h
-      attrs.delete :id
-      attrs
-    end
   end
 
   include InstanceMethods

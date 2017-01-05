@@ -42,11 +42,8 @@ class EventStore < BaseObject
     streams[id] = EventStream.new
   end
 
-  def append(id, expected_version, *events)
-    stream = streams.fetch id
-    stream.version == expected_version or
-      raise EventStoreConcurrencyError
-    stream.append(*events)
+  def append(id, *events)
+    streams.fetch(id).append(*events)
   end
 
   def event_stream_for(id)
@@ -60,6 +57,17 @@ class EventStore < BaseObject
   private
 
   attr_reader :streams
+
+end
+
+class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
+
+  def append(id, expected_version, *events)
+    stream = (__getobj__.send :streams).fetch id
+    stream.version == expected_version or
+      raise EventStoreConcurrencyError
+    super id, *events
+  end
 
 end
 
