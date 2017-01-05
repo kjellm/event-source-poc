@@ -65,7 +65,7 @@ class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
   end
 
   def after_handle(command)
-    logg "Done handling: #{command.inspect}"
+    logg "Done handling: #{command.class.name}"
   end
 
 end

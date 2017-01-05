@@ -9,8 +9,6 @@ end
 
 class EventStream < BaseObject
 
-  attributes :type
-
   def initialize(**args)
     super
     @event_sequence = []
@@ -39,9 +37,9 @@ class EventStore < BaseObject
     @streams = {}
   end
 
-  def create(type, id)
-    raise EventStoreError, "Stream exists for #{type} #{id}" if streams.key? id
-    streams[id] = EventStream.new(type: type)
+  def create(id)
+    raise EventStoreError, "Stream exists for #{id}" if streams.key? id
+    streams[id] = EventStream.new
   end
 
   def append(id, expected_version, *events)
@@ -106,14 +104,13 @@ end
 
 class UnitOfWork < BaseObject
 
-  def initialize(type, id)
+  def initialize(id)
     @id = id
-    @type = type
     @expected_version = registry.event_store.event_stream_version_for(id)
   end
 
   def create
-    registry.event_store.create @type, @id
+    registry.event_store.create @id
   end
 
   def append(*events)
@@ -132,7 +129,7 @@ class EventStoreRepository < BaseObject
     end
 
     def unit_of_work(id)
-      yield UnitOfWork.new(type, id)
+      yield UnitOfWork.new(id)
     end
 
     private
