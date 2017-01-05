@@ -8,7 +8,7 @@ class Command < ValueObject
   private
 
   def validate
-    required id
+    raise "Implement in subclass! #{self.class.name}"
   end
 
   def required(*values)
@@ -54,17 +54,9 @@ class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
   end
 
   def handle(command)
-    before_handle(command)
+    logg "Start handling: #{command.inspect}"
     super
   ensure
-    after_handle(command)
-  end
-
-  def before_handle(command)
-    logg "Start handling: #{command.inspect}"
-  end
-
-  def after_handle(command)
     logg "Done handling: #{command.class.name}"
   end
 
