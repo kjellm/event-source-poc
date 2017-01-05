@@ -1,7 +1,7 @@
-class EventSourceError < StandardError
+class EventStoreError < StandardError
 end
 
-class EventStoreConcurrencyError < EventSourceError
+class EventStoreConcurrencyError < EventStoreError
 end
 
 class Event < ValueObject
@@ -40,7 +40,7 @@ class EventStore < BaseObject
   end
 
   def create(type, id)
-    raise EventSourceError, "Stream exists for #{type} #{id}" if streams.key? id
+    raise EventStoreError, "Stream exists for #{type} #{id}" if streams.key? id
     streams[id] = EventStream.new(type: type)
   end
 
