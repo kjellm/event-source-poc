@@ -10,23 +10,24 @@ class Application < BaseObject
   def main
     puts "LOGG ---------------------------------------------------------"
     recording_id = UUID.generate
-    run({id: recording_id, title: "Sledge Hammer", artist: "Peter Gabriel",
-         duration: 313},
-        CreateRecording, Recording)
+    recording_data = {id: recording_id, title: "Sledge Hammer",
+                      artist: "Peter Gabriel", duration: 313}
+    run(recording_data, CreateRecording, Recording)
 
     release_id = UUID.generate
     run({id: release_id, title: "So", tracks: []},
         CreateRelease, Release)
-    run({id: release_id, tracks: [recording_id]},
-        UpdateRelease, Release)
     run({id: UUID.generate, title: "Shaking The Tree",
          tracks: [recording_id]},
         CreateRelease, Release)
 
-    run({id: recording_id, title: "Sledgehammer"},
-        UpdateRecording, Recording)
+    recording_data.merge!({ title:  "Sledgehammer" })
+    run(recording_data, UpdateRecording, Recording)
 
-    # Some failing commands
+    run({id: release_id, title: "So", tracks: [recording_id]},
+        UpdateRelease, Release)
+
+    # Some failing commands, look in log for verification of failure
     run({id: "Non-existing ID", title: "Foobar"},
         UpdateRecording, Recording)
 
@@ -49,7 +50,7 @@ class Application < BaseObject
     command = command_class.new(request_data)
     command_handler.handle command
   rescue StandardError => e
-    logg "Command #{command} failed because of: #{e}"
+    logg "ERROR: Command #{command} failed because of: #{e}"
   end
 
 end

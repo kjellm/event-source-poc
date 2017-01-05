@@ -20,39 +20,30 @@ class Release < Entity
   end
 end
 
-module ReleaseCommandValidation
+class ReleaseCommand < Command
 
   private
 
   def validate
+    required(*RELEASE_ATTRIBUTES.map {|m| send m})
     non_blank_string(title)
   end
 end
 
-class CreateRelease < Command
+class CreateRelease < ReleaseCommand
   attributes *RELEASE_ATTRIBUTES
-
-  include ReleaseCommandValidation
-
-  def validate
-    super
-    required(*RELEASE_ATTRIBUTES.map {|m| send m})
-  end
 end
 
 class ReleaseCreated < Event
   attributes *RELEASE_ATTRIBUTES
 end
 
-class UpdateRelease < UpdateCommand
-  attributes Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
-
-  include ReleaseCommandValidation
-
+class UpdateRelease < ReleaseCommand
+  attributes *RELEASE_ATTRIBUTES
 end
 
-class ReleaseUpdated < UpdateEvent
-  attributes Hash[RELEASE_ATTRIBUTES.zip(Array.new(1))]
+class ReleaseUpdated < Event
+  attributes *RELEASE_ATTRIBUTES
 end
 
 #
@@ -109,39 +100,32 @@ end
 
 RECORDING_ATTRIBUTES = %I(id title artist duration)
 
-module RecordingCommandValidation
+class RecordingCommand < Command
 
   private
 
   def validate
+    required(*RECORDING_ATTRIBUTES.map {|m| send m})
     non_blank_string(title)
     non_blank_string(artist)
     positive_integer(duration)
   end
 end
 
-class CreateRecording < Command
+class CreateRecording < RecordingCommand
   attributes *RECORDING_ATTRIBUTES
-
-  include RecordingCommandValidation
-
-  def validate
-    super
-    required(*RECORDING_ATTRIBUTES.map {|m| send m})
-  end
 end
 
 class RecordingCreated < Event
   attributes *RECORDING_ATTRIBUTES
 end
 
-class UpdateRecording < UpdateCommand
-  attributes Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
-  include RecordingCommandValidation
+class UpdateRecording < RecordingCommand
+  attributes *RECORDING_ATTRIBUTES
 end
 
-class RecordingUpdated < UpdateEvent
-  attributes Hash[RECORDING_ATTRIBUTES.zip(Array.new(2))]
+class RecordingUpdated < Event
+  attributes *RECORDING_ATTRIBUTES
 end
 
 class Recording < Entity

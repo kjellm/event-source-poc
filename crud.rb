@@ -88,27 +88,3 @@ module CrudAggregate
     end
   end
 end
-
-module UpdateCommandOrEvent
-  def initialize(attrs)
-    super
-    @attributes_given = attrs.keys
-  end
-
-  def to_h
-    h = super
-    h.slice(*attributes_given)
-  end
-
-  private
-
-  attr_reader :attributes_given
-end
-
-class UpdateEvent < Event
-  include UpdateCommandOrEvent
-end
-
-class UpdateCommand < Command
-  include UpdateCommandOrEvent
-end
