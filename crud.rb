@@ -59,9 +59,7 @@ module CrudAggregate
     end
   end
 
-  module InstanceMethods
-    def assert_validity
-    end
+  def assert_validity
   end
 
   def self.included(othermod)
@@ -69,7 +67,6 @@ module CrudAggregate
     othermod.extend CrudCommandHandler::InstanceMethods
     othermod.extend EventStoreRepository::InstanceMethods
     othermod.extend ClassMethods
-    othermod.include InstanceMethods
 
     othermod_name = othermod.name.snake_case
 
