@@ -5,6 +5,8 @@ require_relative 'crud'
 require_relative 'model'
 require_relative 'read'
 
+require 'pp'
+
 class Application < BaseObject
 
   def main
@@ -21,8 +23,8 @@ class Application < BaseObject
          tracks: [recording_id]},
         CreateRelease, Release)
 
-    recording_data.merge!({ title:  "Sledgehammer" })
-    run(recording_data, UpdateRecording, Recording)
+    run(recording_data.merge({ title:  "Sledgehammer" }),
+        UpdateRecording, Recording)
 
     run({id: release_id, title: "So", tracks: [recording_id]},
         UpdateRelease, Release)
@@ -33,7 +35,7 @@ class Application < BaseObject
 
     puts
     puts "EVENT STORE ------------------------------------------------"
-    p registry.event_store
+    pp registry.event_store
 
     puts
     puts "PROJECTIONS ------------------------------------------------"
