@@ -22,7 +22,6 @@ class EventStream < BaseObject
 
   def append(*events)
     event_sequence.push(*events)
-    logg "New events: #{events}"
   end
 
   def to_a
@@ -94,6 +93,14 @@ class EventStorePubSubDecorator < DelegateClass(EventStore)
     end
   end
 
+end
+
+class EventStoreLoggDecorator < DelegateClass(EventStore)
+
+  def append(id, expected_version, *events)
+    super
+    logg "New events: #{events}"
+  end
 
 end
 
