@@ -39,17 +39,24 @@ class ReleaseProjectionClass < BaseObject
     case event
     when ReleaseCreated
       release = event.to_h
-      release.fetch(:tracks).map! { |id| RecordingProjection.find(id).to_h }
+      track_id_to_data release.fetch(:tracks)
       @releases[event.id] = release
     when ReleaseUpdated
       release = event.to_h
-      release[:tracks]&.map! { |id| RecordingProjection.find(id).to_h }
+      track_id_to_data release.fetch(:tracks)
       @releases[event.id].merge! release
     when RecordingUpdated
       @releases.values.each do |r|
-        r.fetch(:tracks).map! { |track| RecordingProjection.find(track.fetch(:id)).to_h }
+        r.fetch(:tracks).map! {|track| track.fetch(:id)}
+        track_id_to_data r.fetch(:tracks)
       end
     end
+  end
+
+  private
+
+  def track_id_to_data(track_ids)
+    track_ids.map! { |id| RecordingProjection.find(id).to_h }
   end
 end
 

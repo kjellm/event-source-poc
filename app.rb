@@ -23,11 +23,11 @@ class Application < BaseObject
          tracks: [recording_id]},
         CreateRelease, Release)
 
-    run(recording_data.merge({ title:  "Sledgehammer" }),
-        UpdateRecording, Recording)
-
     run({id: release_id, title: "So", tracks: [recording_id]},
         UpdateRelease, Release)
+
+    run(recording_data.merge({ title:  "Sledgehammer" }),
+        UpdateRecording, Recording)
 
     # Some failing commands, look in log for verification of failure
     run({id: "Non-existing ID", title: "Foobar"},
