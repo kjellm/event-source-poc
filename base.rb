@@ -39,28 +39,16 @@ end
 
 module Attributes
 
-  def attributes(*mandatory_args, **args_with_defaults)
-    names = [*mandatory_args, *args_with_defaults.keys]
-    mandatory_args = Set.new(mandatory_args)
-
+  def attributes(*names)
     attr_reader(*names)
 
     define_singleton_method(:attribute_names) { names }
 
     mod = Module.new do
       define_method :initialize do |**attrs|
-        mandatory_args_given = mandatory_args & attrs.keys
-
-        unless mandatory_args_given == mandatory_args
-          raise ArgumentError.new("Missing arguments: " + (mandatory_args - mandatory_args_given).to_a.join(", "))
-        end
-        args_with_defaults.each do |name, value|
-          instance_variable_set "@#{name}", value
-        end
 
         attrs.each do |name, value|
           raise ArgumentError.new "Unrecognized argument: #{name}" unless names.include? name
-
           if respond_to? "#{name}=", true
             send "#{name}=", value
           else
