@@ -39,9 +39,9 @@ class Application < BaseObject
 
     puts
     puts "PROJECTIONS ------------------------------------------------"
-    p ReleaseProjection.find release_id
-    p RecordingProjection.find recording_id
-    p TotalsProjection.totals
+    p TheReleaseProjection.find release_id
+    p TheRecordingProjection.find recording_id
+    p TheTotalsProjection.totals
   end
 
   private

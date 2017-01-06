@@ -14,7 +14,7 @@ class RepositoryProjection < BaseObject
 
 end
 
-class RecordingProjectionClass < RepositoryProjection
+class RecordingProjection < RepositoryProjection
 
   def type
     Recording
@@ -22,10 +22,18 @@ class RecordingProjectionClass < RepositoryProjection
 
 end
 
-class ReleaseProjectionClass < BaseObject
+class SubscriberProjection < BaseObject
 
   def initialize
     registry.event_store.subscribe(self)
+  end
+
+end
+
+class ReleaseProjection < SubscriberProjection
+
+  def initialize
+    super
     @releases = {}
   end
 
@@ -54,14 +62,14 @@ class ReleaseProjectionClass < BaseObject
   private
 
   def track_id_to_data(track_ids)
-    track_ids.map! { |id| RecordingProjection.find(id).to_h }
+    track_ids.map! { |id| TheRecordingProjection.find(id).to_h }
   end
 end
 
-class TotalsProjectionClass < BaseObject
+class TotalsProjection < SubscriberProjection
 
   def initialize
-    registry.event_store.subscribe(self)
+    super
     @totals = Hash.new(0)
   end
 
@@ -74,6 +82,6 @@ class TotalsProjectionClass < BaseObject
 
 end
 
-RecordingProjection = RecordingProjectionClass.new
-ReleaseProjection = ReleaseProjectionClass.new
-TotalsProjection = TotalsProjectionClass.new
+TheRecordingProjection = RecordingProjection.new
+TheReleaseProjection = ReleaseProjection.new
+TheTotalsProjection = TotalsProjection.new
