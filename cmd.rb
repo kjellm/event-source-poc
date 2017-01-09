@@ -1,15 +1,4 @@
-class Command < ValueObject
-
-  def initialize(*args)
-    super
-    validate
-  end
-
-  private
-
-  def validate
-    raise "Implement in subclass! #{self.class.name}"
-  end
+module Validations
 
   def required(*values)
     values.none?(&:nil?) or
@@ -27,6 +16,22 @@ class Command < ValueObject
     obj.is_a?(Integer) && obj > 0 or
       raise ArgumentError
   end
+
+end
+
+class Command < ValueObject
+
+  include Validations
+
+  def initialize(*args)
+    super
+    validate
+  end
+
+  def validate
+    raise "Implement in subclass! #{self.class.name}"
+  end
+
 end
 
 class CommandHandler < BaseObject
