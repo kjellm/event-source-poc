@@ -12,6 +12,10 @@ class RepositoryProjection < BaseObject
 
   attr_reader :repository
 
+  def type
+    raise "Implement in subclass! #{self.class.name}"
+  end
+
 end
 
 class RecordingProjection < RepositoryProjection
