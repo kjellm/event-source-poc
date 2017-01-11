@@ -32,6 +32,14 @@ class SubscriberProjection < BaseObject
     registry.event_store.subscribe(self)
   end
 
+  def find(id)
+    raise "Implement in subclass! #{self.class.name}"
+  end
+
+  def apply(event)
+    handler_name = "when_#{event.class.name.snake_case}".to_sym
+    send handler_name, event if respond_to?(handler_name)
+  end
 end
 
 class ReleaseProjection < SubscriberProjection
@@ -45,29 +53,45 @@ class ReleaseProjection < SubscriberProjection
     @releases[id].clone
   end
 
-  def apply(event)
-    case event
-    when ReleaseCreated
-      release = event.to_h
-      track_id_to_data release.fetch(:tracks)
-      @releases[event.id] = release
-    when ReleaseUpdated
-      release = event.to_h
-      track_id_to_data release.fetch(:tracks)
-      @releases[event.id].merge! release
-    when RecordingUpdated
-      @releases.values.each do |r|
-        r.fetch(:tracks).map! {|track| track.fetch(:id)}
-        track_id_to_data r.fetch(:tracks)
-      end
-    end
+  def when_release_created(event)
+    release = build_release_from_event_data event
+    @releases[event.id] = release
+  end
+
+  def when_release_updated(event)
+    release = build_release_from_event_data event
+    @releases[event.id].merge! release
+  end
+
+  def when_recording_updated(_event)
+    refresh_all_tracks
   end
 
   private
 
+  def build_release_from_event_data(event)
+    release = event.to_h
+    track_id_to_data release.fetch(:tracks)
+    derive_artist_from_tracks(release)
+    release
+  end
+
   def track_id_to_data(track_ids)
     track_ids.map! { |id| TheRecordingProjection.find(id).to_h }
   end
+
+  def refresh_all_tracks
+    @releases.values.each do |r|
+      r.fetch(:tracks).map! {|track| track.fetch(:id)}
+      track_id_to_data r.fetch(:tracks)
+    end
+  end
+
+  def derive_artist_from_tracks(release)
+    artists = release[:tracks].map {|rec| rec[:artist]}.uniq
+    release[:artist] = artists.length == 1 ? artists.first : "Various artists"
+  end
+
 end
 
 class TotalsProjection < SubscriberProjection
@@ -77,12 +101,21 @@ class TotalsProjection < SubscriberProjection
     @totals = Hash.new(0)
   end
 
-  def apply(event)
-    return unless [RecordingCreated, ReleaseCreated].include? event.class
-    @totals[event.class] += 1
+  def when_recording_created(event)
+    handle_create_event event
+  end
+
+  def when_release_created(event)
+    handle_create_event event
   end
 
   attr_reader :totals
+
+  private
+
+  def handle_create_event(event)
+    @totals[event.class] += 1
+  end
 
 end
 
