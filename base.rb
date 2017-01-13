@@ -131,3 +131,12 @@ end
 
 class ValueObject < BaseObject
 end
+
+class EventStoreError < StandardError
+end
+
+class EventStoreConcurrencyError < EventStoreError
+end
+
+class Event < ValueObject
+end
