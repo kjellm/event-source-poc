@@ -16,22 +16,22 @@ class CrudCommandHandler < CommandHandler
     end
 
     def process_create(command)
-      obj = type.new(command.to_h)
-      validator(obj).assert_validity
-      event = self.class.const_get("#{type}Created").new(command.to_h)
       repository.unit_of_work(command.id) do |uow|
+        obj = type.new(command.to_h)
+        validator(obj).assert_validity
+        event = self.class.const_get("#{type}Created").new(command.to_h)
         uow.create
         uow.append event
       end
     end
 
     def process_update(command)
-      obj = repository.find command.id
-      raise ArgumentError if obj.nil?
-      obj.set_attributes command.to_h
-      validator(obj).assert_validity
-      event = self.class.const_get("#{type}Updated").new(command.to_h)
       repository.unit_of_work(command.id) do |uow|
+        obj = repository.find command.id
+        raise ArgumentError if obj.nil?
+        obj.set_attributes command.to_h
+        validator(obj).assert_validity
+        event = self.class.const_get("#{type}Updated").new(command.to_h)
         uow.append event
       end
     end
