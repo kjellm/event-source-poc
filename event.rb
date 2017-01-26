@@ -53,11 +53,23 @@ end
 
 class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
 
+  def initialize(obj)
+    super
+    @locks = {}
+  end
+
+  def create(id)
+    super
+    @locks[id] = Mutex.new
+    nil
+  end
+
   def append(id, expected_version, *events)
-    stream = (__getobj__.send :streams).fetch id
-    stream.version == expected_version or
-      raise EventStoreConcurrencyError
-    super id, *events
+    @locks[id].synchronize do
+      event_stream_version_for(id) == expected_version or
+        raise EventStoreConcurrencyError
+      super id, *events
+    end
   end
 
 end
