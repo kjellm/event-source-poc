@@ -27,6 +27,7 @@ class EventStore < BaseObject
     id = UUID.as_int id
     raise EventStoreError, "Stream exists for #{id}" if @streams.key? id
     @streams[id] = EventStream.new(id)
+    raise EventStoreError, "Stream exists for #{id}" if @streams[id].version != 0
   end
 
   def append(id, *events)
