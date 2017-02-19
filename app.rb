@@ -5,6 +5,8 @@ require_relative 'crud'
 require_relative 'model'
 require_relative 'read'
 
+require_relative 'pstore-streams'
+
 require 'pp'
 
 class Application < BaseObject

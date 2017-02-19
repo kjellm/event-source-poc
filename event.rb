@@ -1,7 +1,6 @@
 class EventStream < BaseObject
 
-  def initialize(**args)
-    super
+  def initialize(id)
     @event_sequence = []
   end
 
@@ -10,16 +9,12 @@ class EventStream < BaseObject
   end
 
   def append(*events)
-    event_sequence.push(*events)
+    @event_sequence.push(*events)
   end
 
   def to_a
     @event_sequence.clone
   end
-
-  private
-
-  attr_reader :event_sequence
 end
 
 class EventStore < BaseObject
@@ -29,26 +24,25 @@ class EventStore < BaseObject
   end
 
   def create(id)
-    raise EventStoreError, "Stream exists for #{id}" if streams.key? id
-    streams[id] = EventStream.new
+    id = UUID.as_int id
+    raise EventStoreError, "Stream exists for #{id}" if @streams.key? id
+    @streams[id] = EventStream.new(id)
   end
 
   def append(id, *events)
-    streams.fetch(id).append(*events)
+    id = UUID.as_int id
+    @streams.fetch(id).append(*events)
   end
 
   def event_stream_for(id)
-    streams[id]&.clone
+    id = UUID.as_int id
+    @streams[id]&.clone
   end
 
   def event_stream_version_for(id)
-    streams[id]&.version || 0
+    id = UUID.as_int id
+    @streams[id]&.version || 0
   end
-
-  private
-
-  attr_reader :streams
-
 end
 
 class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
