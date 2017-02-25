@@ -37,20 +37,24 @@ class Application < BaseObject
     pp registry.event_store
 
     puts
+    puts "EVENT LOGG -------------------------------------------------"
+    pp TheEventLogg
+
+
+    puts
     puts "PROJECTIONS ------------------------------------------------"
     # FIXME lock event store
     require_relative 'read'
     puber = EventPublisher.new()
-    [TheReleaseProjection, TheRecordingProjection, TheTotalsProjection].each do |pr|
+    projections = [TheReleaseProjection, TheRecordingProjection, TheTotalsProjection]
+    projections.each do |pr|
       puber.subscribe(pr)
     end
-    puber.publish(*EventLogg.instance.to_a)
+    puber.publish(*TheEventLogg.to_a)
 
     p TheReleaseProjection.find release_id
     p TheRecordingProjection.find recording_id
     p TheTotalsProjection.totals
-
-    p EventLogg.instance
   end
 
   private

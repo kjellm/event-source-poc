@@ -53,7 +53,7 @@ class ReleaseProjection < SubscriberProjection
   end
 
   def find(id)
-    @releases[id].clone
+    @releases[id]&.clone
   end
 
   def when_release_created(event)

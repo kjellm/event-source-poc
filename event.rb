@@ -217,11 +217,7 @@ class EventStoreRepository < BaseObject
   include InstanceMethods
 end
 
-require 'singleton'
-
-EventLogg = Class.new(BaseObject) do
-
-  include Singleton
+class EventLogg < BaseObject
 
   STREAM_ID = 1
 
@@ -238,4 +234,10 @@ EventLogg = Class.new(BaseObject) do
     @stream.to_a
   end
 
-end.tap { |o| o.instance }
+  def inspect
+    "#<EventLogg #{to_a.inspect}>"
+  end
+
+end
+
+TheEventLogg = EventLogg.new
