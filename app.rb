@@ -48,7 +48,7 @@ class Application < BaseObject
     puber = EventPublisher.new()
     projections = [TheReleaseProjection, TheRecordingProjection, TheTotalsProjection]
     projections.each do |pr|
-      puber.subscribe(pr)
+      puber.add_subscriber(pr)
     end
     puber.publish(*TheEventLogg.to_a)
 

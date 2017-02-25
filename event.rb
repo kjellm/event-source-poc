@@ -1,72 +1,19 @@
-class HStore
-
-  def initialize
-    @h = {}
-  end
-
-  def version
-    @h.size
-  end
-
-  def [](key)
-    @h[key]
-  end
-
-  def []=(key, value)
-    @h[key] = value
-  end
-
-  def transaction(*_args)
-    yield
-  end
-end
-
 class EventStream < BaseObject
 
-  READ_ONLY = true
-  THREAD_SAFE = true
-
-  #@store = PStore.new("events.pstore", THREAD_SAFE)
-  @store = HStore.new
-
-  def self.store
-    @store
-  end
-
-  def store
-    self.class.store
-  end
-
-  def initialize(id)
-    @id = id
-    store.transaction(!READ_ONLY) do
-      store[id] = []
-    end
+  def initialize
+    @event_sequence = []
   end
 
   def version
-    store.transaction(READ_ONLY) do
-      store[@id].length
-    end
+    @event_sequence.length
   end
 
   def append(*events)
-    store.transaction(!READ_ONLY) do
-      store[@id].push(*events)
-    end
+    @event_sequence.push(*events)
   end
 
   def to_a
-    store.transaction(READ_ONLY) do
-      store[@id].clone
-    end
-  end
-
-  def inspect
-    store.transaction(READ_ONLY) do
-      '#<%s:0x%x @id="%s" events=%s>' %
-        [self.class.name, object_id, UUID.from_int(@id), store[@id].inspect]
-    end
+    @event_sequence.clone
   end
 
 end
@@ -79,26 +26,22 @@ class EventStore < BaseObject
   end
 
   def create(id)
-    id = UUID.as_int id
     raise EventStoreError, "Stream exists for #{id}" if @streams.key? id
-    @streams[id] = EventStream.new(id)
-    raise EventStoreError, "Stream exists for #{id}" if @streams[id].version != 0
+    @streams[id] = EventStream.new
   end
 
   def append(id, *events)
-    id = UUID.as_int id
     @streams.fetch(id).append(*events)
   end
 
   def event_stream_for(id)
-    id = UUID.as_int id
     @streams[id]&.clone
   end
 
   def event_stream_version_for(id)
-    id = UUID.as_int id
     @streams[id]&.version || 0
   end
+
 end
 
 class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
@@ -129,7 +72,7 @@ class EventPublisher
     @subscribers = []
   end
 
-  def subscribe(subscriber)
+  def add_subscriber(subscriber)
     @subscribers << subscriber
   end
 
@@ -140,9 +83,8 @@ class EventPublisher
       end
     end
   end
+
 end
-
-
 
 class EventStorePubSubDecorator < DelegateClass(EventStore)
 
@@ -219,11 +161,9 @@ end
 
 class EventLogg < BaseObject
 
-  STREAM_ID = 1
-
   def initialize
-    @stream = EventStream.new(STREAM_ID)
-    registry.event_publisher.subscribe self
+    @stream = EventStream.new
+    registry.event_publisher.add_subscriber self
   end
 
   def apply(event)

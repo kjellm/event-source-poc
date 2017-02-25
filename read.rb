@@ -32,7 +32,7 @@ end
 class SubscriberProjection < BaseObject
 
   def initialize
-    registry.event_publisher.subscribe(self)
+    registry.event_publisher.add_subscriber(self)
   end
 
   def find(id)
