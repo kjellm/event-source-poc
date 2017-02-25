@@ -3,9 +3,6 @@ require_relative 'event'
 require_relative 'cmd'
 require_relative 'crud'
 require_relative 'model'
-require_relative 'read'
-
-require_relative 'pstore-streams'
 
 require 'pp'
 
@@ -41,9 +38,19 @@ class Application < BaseObject
 
     puts
     puts "PROJECTIONS ------------------------------------------------"
+    # FIXME lock event store
+    require_relative 'read'
+    puber = EventPublisher.new()
+    [TheReleaseProjection, TheRecordingProjection, TheTotalsProjection].each do |pr|
+      puber.subscribe(pr)
+    end
+    puber.publish(*EventLogg.instance.to_a)
+
     p TheReleaseProjection.find release_id
     p TheRecordingProjection.find recording_id
     p TheTotalsProjection.totals
+
+    p EventLogg.instance
   end
 
   private

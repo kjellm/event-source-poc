@@ -1,21 +1,76 @@
-class EventStream < BaseObject
+class HStore
 
-  def initialize(id)
-    @event_sequence = []
+  def initialize
+    @h = {}
   end
 
   def version
-    @event_sequence.length
+    @h.size
+  end
+
+  def [](key)
+    @h[key]
+  end
+
+  def []=(key, value)
+    @h[key] = value
+  end
+
+  def transaction(*_args)
+    yield
+  end
+end
+
+class EventStream < BaseObject
+
+  READ_ONLY = true
+  THREAD_SAFE = true
+
+  #@store = PStore.new("events.pstore", THREAD_SAFE)
+  @store = HStore.new
+
+  def self.store
+    @store
+  end
+
+  def store
+    self.class.store
+  end
+
+  def initialize(id)
+    @id = id
+    store.transaction(!READ_ONLY) do
+      store[id] = []
+    end
+  end
+
+  def version
+    store.transaction(READ_ONLY) do
+      store[@id].length
+    end
   end
 
   def append(*events)
-    @event_sequence.push(*events)
+    store.transaction(!READ_ONLY) do
+      store[@id].push(*events)
+    end
   end
 
   def to_a
-    @event_sequence.clone
+    store.transaction(READ_ONLY) do
+      store[@id].clone
+    end
   end
+
+  def inspect
+    store.transaction(READ_ONLY) do
+      '#<%s:0x%x @id="%s" events=%s>' %
+        [self.class.name, object_id, UUID.from_int(@id), store[@id].inspect]
+    end
+  end
+
 end
+
 
 class EventStore < BaseObject
 
@@ -68,39 +123,44 @@ class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
 
 end
 
-class EventStorePubSubDecorator < DelegateClass(EventStore)
+class EventPublisher
 
-  def initialize(obj)
-    super
+  def initialize
     @subscribers = []
   end
 
   def subscribe(subscriber)
-    subscribers << subscriber
+    @subscribers << subscriber
   end
-
-  def append(id, expected_version, *events)
-    super
-    publish(*events)
-  end
-
-  private
-
-  attr_reader :subscribers
 
   def publish(*events)
-    subscribers.each do |sub|
-      events.each do |e|
+    events.each do |e|
+      @subscribers.each do |sub|
         sub.apply e
       end
     end
+  end
+end
+
+
+
+class EventStorePubSubDecorator < DelegateClass(EventStore)
+
+  def initialize(obj)
+    super
+    @publisher = registry.event_publisher
+  end
+
+  def append(id, *events)
+    super
+    @publisher.publish(*events)
   end
 
 end
 
 class EventStoreLoggDecorator < DelegateClass(EventStore)
 
-  def append(id, expected_version, *events)
+  def append(id, *events)
     super
     logg "New events: #{events}"
   end
@@ -156,3 +216,26 @@ class EventStoreRepository < BaseObject
 
   include InstanceMethods
 end
+
+require 'singleton'
+
+EventLogg = Class.new(BaseObject) do
+
+  include Singleton
+
+  STREAM_ID = 1
+
+  def initialize
+    @stream = EventStream.new(STREAM_ID)
+    registry.event_publisher.subscribe self
+  end
+
+  def apply(event)
+    @stream.append event
+  end
+
+  def to_a
+    @stream.to_a
+  end
+
+end.tap { |o| o.instance }

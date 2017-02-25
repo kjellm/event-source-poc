@@ -8,6 +8,9 @@ class RepositoryProjection < BaseObject
     repository.find(id).to_h
   end
 
+  # Mimic subscriber projections
+  def apply(*_args);  end
+
   private
 
   attr_reader :repository
@@ -29,7 +32,7 @@ end
 class SubscriberProjection < BaseObject
 
   def initialize
-    registry.event_store.subscribe(self)
+    registry.event_publisher.subscribe(self)
   end
 
   def find(id)
