@@ -105,13 +105,9 @@ class Registry < BaseObject
   def event_store
     @event_store ||=
       EventStoreOptimisticLockDecorator.new(
-        EventStoreLoggDecorator.new(
+        EventStoreAuditLoggDecorator.new(
           EventStorePubSubDecorator.new(
             EventStore.new)))
-  end
-
-  def event_publisher
-    @event_publisher ||= EventPublisher.new
   end
 
   def repository_for(klass)

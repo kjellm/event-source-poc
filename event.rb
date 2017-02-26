@@ -90,7 +90,11 @@ class EventStorePubSubDecorator < DelegateClass(EventStore)
 
   def initialize(obj)
     super
-    @publisher = registry.event_publisher
+    @publisher = EventPublisher.new
+  end
+
+  def add_subscriber(subscriber)
+    @publisher.add_subscriber subscriber
   end
 
   def append(id, *events)
@@ -100,7 +104,7 @@ class EventStorePubSubDecorator < DelegateClass(EventStore)
 
 end
 
-class EventStoreLoggDecorator < DelegateClass(EventStore)
+class EventStoreAuditLoggDecorator < DelegateClass(EventStore)
 
   def append(id, *events)
     super
@@ -163,7 +167,7 @@ class EventLogg < BaseObject
 
   def initialize
     @stream = EventStream.new
-    registry.event_publisher.add_subscriber self
+    registry.event_store.add_subscriber self
   end
 
   def apply(event)
