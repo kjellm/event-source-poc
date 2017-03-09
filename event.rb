@@ -66,7 +66,7 @@ class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
 
 end
 
-class EventPublisher
+class EventPublisher < BaseObject
 
   def initialize
     @subscribers = []
@@ -122,16 +122,12 @@ class UnitOfWork < BaseObject
   end
 
   def create
-    event_store.create id
+    @event_store.create @id
   end
 
   def append(*events)
-    event_store.append id, expected_version, *events
+    @event_store.append @id, @expected_version, *events
   end
-
-  private
-
-  attr_reader :id, :event_store, :expected_version
 
 end
 
