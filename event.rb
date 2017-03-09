@@ -159,6 +159,15 @@ class EventStoreRepository < BaseObject
   include InstanceMethods
 end
 
+class EventLoggEntry < ValueObject
+  attributes :timestamp, :event
+
+  def initialize(event)
+    super timestamp: Time.now, event: event
+  end
+
+end
+
 class EventLogg < BaseObject
 
   def initialize
@@ -167,11 +176,11 @@ class EventLogg < BaseObject
   end
 
   def apply(event)
-    @stream.append event
+    @stream.append EventLoggEntry.new(event)
   end
 
   def to_a
-    @stream.to_a
+    @stream.to_a.map(&:event)
   end
 
   def inspect
