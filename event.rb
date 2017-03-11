@@ -171,20 +171,16 @@ end
 class EventLogg < BaseObject
 
   def initialize
-    @stream = EventStream.new
+    @store = []
     registry.event_store.add_subscriber self
   end
 
   def apply(event)
-    @stream.append EventLoggEntry.new(event)
+    @store << EventLoggEntry.new(event)
   end
 
   def to_a
-    @stream.to_a.map(&:event)
-  end
-
-  def inspect
-    "#<EventLogg #{to_a.inspect}>"
+    @store.to_a.map(&:event)
   end
 
 end
