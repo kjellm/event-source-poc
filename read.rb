@@ -21,7 +21,7 @@ class RepositoryProjection < BaseObject
 
 end
 
-class RecordingProjection < RepositoryProjection
+class FakeRecordingProjection < RepositoryProjection
 
   def type
     Recording
@@ -45,10 +45,32 @@ class SubscriberProjection < BaseObject
   end
 end
 
-class ReleaseProjection < SubscriberProjection
+class RecordingProjection < SubscriberProjection
 
   def initialize
     super
+    @store = {}
+  end
+
+  def find(id)
+    @store[id]&.clone
+  end
+
+  def when_recording_created(event)
+    @store[event.id] = event.to_h
+  end
+
+  def when_recording_updated(event)
+    @store[event.id].merge! event.to_h
+  end
+
+end
+
+class ReleaseProjection < SubscriberProjection
+
+  def initialize(recordings)
+    super()
+    @recordings = recordings
     @releases = {}
   end
 
@@ -80,7 +102,7 @@ class ReleaseProjection < SubscriberProjection
   end
 
   def track_id_to_data(track_ids)
-    track_ids.map! { |id| TheRecordingProjection.find(id).to_h }
+    track_ids.map! { |id| @recordings.find(id).to_h }
   end
 
   def refresh_all_tracks
@@ -121,7 +143,3 @@ class TotalsProjection < SubscriberProjection
   end
 
 end
-
-TheRecordingProjection = RecordingProjection.new
-TheReleaseProjection = ReleaseProjection.new
-TheTotalsProjection = TotalsProjection.new
