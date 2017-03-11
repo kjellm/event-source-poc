@@ -179,6 +179,10 @@ class EventLogg < BaseObject
     @store << EventLoggEntry.new(event)
   end
 
+  def upto(timestamp)
+    @store.take_while {|entry| entry.timestamp < timestamp}.map(&:event)
+  end
+
   def to_a
     @store.to_a.map(&:event)
   end
