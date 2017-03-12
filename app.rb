@@ -31,10 +31,12 @@ class Application < BaseObject
     puts
     puts "PROJECTIONS ------------------------------------------------"
     print_projections
+
     rebuild_projections_from(TheEventLogg.upto(@checkpoint))
     puts
     puts "Upto #@checkpoint"
     print_projections
+
     rebuild_projections_from(TheEventLogg.to_a)
     puts
     puts "All"
