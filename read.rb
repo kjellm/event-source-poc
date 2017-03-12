@@ -96,13 +96,13 @@ class ReleaseProjection < SubscriberProjection
 
   def build_release_from_event_data(event)
     release = event.to_h
-    track_id_to_data release.fetch(:tracks)
+    release[:tracks] = track_id_to_data release.fetch(:tracks)
     derive_artist_from_tracks(release)
     release
   end
 
   def track_id_to_data(track_ids)
-    track_ids.map! { |id| @recordings.find(id).to_h }
+    track_ids.map { |id| @recordings.find(id).to_h }
   end
 
   def refresh_all_tracks
