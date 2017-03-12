@@ -30,17 +30,17 @@ class Application < BaseObject
 
     puts
     puts "PROJECTIONS ------------------------------------------------"
-    print_projections
+    peek_at_projections
 
     rebuild_projections_from(TheEventLogg.upto(@checkpoint))
     puts
     puts "Upto #@checkpoint"
-    print_projections
+    peek_at_projections
 
     rebuild_projections_from(TheEventLogg.to_a)
     puts
     puts "All"
-    print_projections
+    peek_at_projections
   end
 
   private
@@ -66,7 +66,7 @@ class Application < BaseObject
     puber.publish(*events)
   end
 
-  def print_projections
+  def peek_at_projections
     p @the_release_projection.find @release_id
     p @the_recording_projection.find @recording_id
     p @the_totals_projection.totals
