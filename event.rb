@@ -66,14 +66,20 @@ class EventStoreOptimisticLockDecorator < DelegateClass(EventStore)
 
 end
 
-class EventPublisher < BaseObject
+class EventStorePubSubDecorator < DelegateClass(EventStore)
 
-  def initialize
+  def initialize(obj)
+    super
     @subscribers = []
   end
 
   def add_subscriber(subscriber)
     @subscribers << subscriber
+  end
+
+  def append(id, *events)
+    super
+    publish(*events)
   end
 
   def publish(*events)
@@ -86,25 +92,7 @@ class EventPublisher < BaseObject
 
 end
 
-class EventStorePubSubDecorator < DelegateClass(EventStore)
-
-  def initialize(obj)
-    super
-    @publisher = EventPublisher.new
-  end
-
-  def add_subscriber(subscriber)
-    @publisher.add_subscriber subscriber
-  end
-
-  def append(id, *events)
-    super
-    @publisher.publish(*events)
-  end
-
-end
-
-class EventStoreAuditLoggDecorator < DelegateClass(EventStore)
+class EventStoreLoggDecorator < DelegateClass(EventStore)
 
   def append(id, *events)
     super
@@ -158,35 +146,3 @@ class EventStoreRepository < BaseObject
 
   include InstanceMethods
 end
-
-class EventLoggEntry < ValueObject
-  attributes :timestamp, :event
-
-  def initialize(event)
-    super timestamp: Time.now, event: event
-  end
-
-end
-
-class EventLogg < BaseObject
-
-  def initialize
-    @store = []
-    registry.event_store.add_subscriber self
-  end
-
-  def apply(event)
-    @store << EventLoggEntry.new(event)
-  end
-
-  def upto(timestamp)
-    @store.take_while {|entry| entry.timestamp < timestamp}.map(&:event)
-  end
-
-  def to_a
-    @store.to_a.map(&:event)
-  end
-
-end
-
-TheEventLogg = EventLogg.new
