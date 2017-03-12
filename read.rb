@@ -108,7 +108,7 @@ class ReleaseProjection < SubscriberProjection
   def refresh_all_tracks
     @releases.values.each do |r|
       r.fetch(:tracks).map! {|track| track.fetch(:id)}
-      track_id_to_data r.fetch(:tracks)
+      r[:tracks] = track_id_to_data r.fetch(:tracks)
     end
   end
 
