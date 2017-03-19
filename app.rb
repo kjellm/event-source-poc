@@ -12,11 +12,12 @@ class Application < BaseObject
   def initialize
     @recording_id = UUID.generate
     @release_id = UUID.generate
+    @checkpoint = Time.now
     initialize_projections
   end
 
   def main
-    puts "LOGG ---------------------------------------------------------"
+    puts "AUDIT LOGG -------------------------------------------------"
     run_commands
 
     puts
@@ -24,7 +25,21 @@ class Application < BaseObject
     pp registry.event_store
 
     puts
+    puts "EVENT LOGG -------------------------------------------------"
+    pp TheEventLogg
+
+    puts
     puts "PROJECTIONS ------------------------------------------------"
+    peek_at_projections
+
+    rebuild_projections_from(TheEventLogg.upto(@checkpoint))
+    puts
+    puts "Upto #@checkpoint"
+    peek_at_projections
+
+    rebuild_projections_from(TheEventLogg.to_a)
+    puts
+    puts "All"
     peek_at_projections
   end
 
@@ -40,6 +55,15 @@ class Application < BaseObject
       @the_recording_projection,
       @the_totals_projection,
     ]
+  end
+
+  def rebuild_projections_from(events)
+    # FIXME lock event store
+    initialize_projections
+
+    puber = EventPublisher.new()
+    @projections.each {|pr| puber.add_subscriber(pr) }
+    puber.publish(*events)
   end
 
   def peek_at_projections
@@ -61,6 +85,8 @@ class Application < BaseObject
 
     run({id: @release_id, title: "So", tracks: [@recording_id]},
         UpdateRelease, Release)
+
+    @checkpoint = Time.now
 
     run(recording_data.merge({ title:  "Sledgehammer" }),
         UpdateRecording, Recording)

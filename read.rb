@@ -8,6 +8,7 @@ class RepositoryProjection < BaseObject
     @repository.find(id).to_h
   end
 
+  # Mimic subscriber projections
   def apply(*_args);  end
 
   private
@@ -18,7 +19,7 @@ class RepositoryProjection < BaseObject
 
 end
 
-class RecordingProjection < RepositoryProjection
+class FakeRecordingProjection < RepositoryProjection
 
   def type
     Recording
@@ -41,6 +42,18 @@ class SubscriberProjection < BaseObject
     handler_name = "when_#{event.class.name.snake_case}".to_sym
     send handler_name, event if respond_to?(handler_name)
   end
+end
+
+class RecordingProjection < SubscriberProjection
+
+  def when_recording_created(event)
+    @store[event.id] = event.to_h
+  end
+
+  def when_recording_updated(event)
+    @store[event.id].merge! event.to_h
+  end
+
 end
 
 class ReleaseProjection < SubscriberProjection
