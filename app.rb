@@ -9,21 +9,57 @@ require 'pp'
 
 class Application < BaseObject
 
+  def initialize
+    @recording_id = UUID.generate
+    @release_id = UUID.generate
+    initialize_projections
+  end
+
   def main
     puts "LOGG ---------------------------------------------------------"
-    recording_id = UUID.generate
-    recording_data = {id: recording_id, title: "Sledge Hammer",
+    run_commands
+
+    puts
+    puts "EVENT STORE ------------------------------------------------"
+    pp registry.event_store
+
+    puts
+    puts "PROJECTIONS ------------------------------------------------"
+    peek_at_projections
+  end
+
+  private
+
+  def initialize_projections
+    @the_recording_projection = RecordingProjection.new
+    @the_release_projection = ReleaseProjection.new(@the_recording_projection)
+    @the_totals_projection = TotalsProjection.new
+
+    @projections = [
+      @the_release_projection,
+      @the_recording_projection,
+      @the_totals_projection,
+    ]
+  end
+
+  def peek_at_projections
+    p @the_release_projection.find @release_id
+    p @the_recording_projection.find @recording_id
+    p @the_totals_projection.totals
+  end
+
+  def run_commands
+    recording_data = {id: @recording_id, title: "Sledge Hammer",
                       artist: "Peter Gabriel", duration: 313}
     run(recording_data, CreateRecording, Recording)
 
-    release_id = UUID.generate
-    run({id: release_id, title: "So", tracks: []},
+    run({id: @release_id, title: "So", tracks: []},
         CreateRelease, Release)
     run({id: UUID.generate, title: "Shaking The Tree",
-         tracks: [recording_id]},
+         tracks: [@recording_id]},
         CreateRelease, Release)
 
-    run({id: release_id, title: "So", tracks: [recording_id]},
+    run({id: @release_id, title: "So", tracks: [@recording_id]},
         UpdateRelease, Release)
 
     run(recording_data.merge({ title:  "Sledgehammer" }),
@@ -32,19 +68,7 @@ class Application < BaseObject
     # Some failing commands, look in log for verification of failure
     run({id: "Non-existing ID", title: "Foobar"},
         UpdateRecording, Recording)
-
-    puts
-    puts "EVENT STORE ------------------------------------------------"
-    pp registry.event_store
-
-    puts
-    puts "PROJECTIONS ------------------------------------------------"
-    p TheReleaseProjection.find release_id
-    p TheRecordingProjection.find recording_id
-    p TheTotalsProjection.totals
   end
-
-  private
 
   def run(request_data, command_class, aggregate)
     logg "Incoming request with data: #{request_data.inspect}"

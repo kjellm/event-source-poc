@@ -5,12 +5,12 @@ class RepositoryProjection < BaseObject
   end
 
   def find(id)
-    repository.find(id).to_h
+    @repository.find(id).to_h
   end
 
-  private
+  def apply(*_args);  end
 
-  attr_reader :repository
+  private
 
   def type
     raise "Implement in subclass! #{self.class.name}"
@@ -29,11 +29,12 @@ end
 class SubscriberProjection < BaseObject
 
   def initialize
-    registry.event_store.subscribe(self)
+    @store = {}
+    registry.event_store.add_subscriber(self)
   end
 
   def find(id)
-    raise "Implement in subclass! #{self.class.name}"
+    @store[id]&.clone
   end
 
   def apply(event)
@@ -44,23 +45,19 @@ end
 
 class ReleaseProjection < SubscriberProjection
 
-  def initialize
-    super
-    @releases = {}
-  end
-
-  def find(id)
-    @releases[id].clone
+  def initialize(recordings)
+    super()
+    @recordings = recordings
   end
 
   def when_release_created(event)
     release = build_release_from_event_data event
-    @releases[event.id] = release
+    @store[event.id] = release
   end
 
   def when_release_updated(event)
     release = build_release_from_event_data event
-    @releases[event.id].merge! release
+    @store[event.id].merge! release
   end
 
   def when_recording_updated(_event)
@@ -71,19 +68,19 @@ class ReleaseProjection < SubscriberProjection
 
   def build_release_from_event_data(event)
     release = event.to_h
-    track_id_to_data release.fetch(:tracks)
+    release[:tracks] = track_id_to_data release.fetch(:tracks)
     derive_artist_from_tracks(release)
     release
   end
 
   def track_id_to_data(track_ids)
-    track_ids.map! { |id| TheRecordingProjection.find(id).to_h }
+    track_ids.map { |id| @recordings.find(id).to_h }
   end
 
   def refresh_all_tracks
-    @releases.values.each do |r|
+    @store.values.each do |r|
       r.fetch(:tracks).map! {|track| track.fetch(:id)}
-      track_id_to_data r.fetch(:tracks)
+      r[:tracks] = track_id_to_data r.fetch(:tracks)
     end
   end
 
@@ -118,7 +115,3 @@ class TotalsProjection < SubscriberProjection
   end
 
 end
-
-TheRecordingProjection = RecordingProjection.new
-TheReleaseProjection = ReleaseProjection.new
-TheTotalsProjection = TotalsProjection.new

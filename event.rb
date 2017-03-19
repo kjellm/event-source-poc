@@ -1,7 +1,6 @@
 class EventStream < BaseObject
 
-  def initialize(**args)
-    super
+  def initialize
     @event_sequence = []
   end
 
@@ -10,17 +9,15 @@ class EventStream < BaseObject
   end
 
   def append(*events)
-    event_sequence.push(*events)
+    @event_sequence.push(*events)
   end
 
   def to_a
     @event_sequence.clone
   end
 
-  private
-
-  attr_reader :event_sequence
 end
+
 
 class EventStore < BaseObject
 
@@ -29,25 +26,21 @@ class EventStore < BaseObject
   end
 
   def create(id)
-    raise EventStoreError, "Stream exists for #{id}" if streams.key? id
-    streams[id] = EventStream.new
+    raise EventStoreError, "Stream exists for #{id}" if @streams.key? id
+    @streams[id] = EventStream.new
   end
 
   def append(id, *events)
-    streams.fetch(id).append(*events)
+    @streams.fetch(id).append(*events)
   end
 
   def event_stream_for(id)
-    streams[id]&.clone
+    @streams[id]&.clone
   end
 
   def event_stream_version_for(id)
-    streams[id]&.version || 0
+    @streams[id]&.version || 0
   end
-
-  private
-
-  attr_reader :streams
 
 end
 
@@ -80,22 +73,18 @@ class EventStorePubSubDecorator < DelegateClass(EventStore)
     @subscribers = []
   end
 
-  def subscribe(subscriber)
-    subscribers << subscriber
+  def add_subscriber(subscriber)
+    @subscribers << subscriber
   end
 
-  def append(id, expected_version, *events)
+  def append(id, *events)
     super
     publish(*events)
   end
 
-  private
-
-  attr_reader :subscribers
-
   def publish(*events)
-    subscribers.each do |sub|
-      events.each do |e|
+    events.each do |e|
+      @subscribers.each do |sub|
         sub.apply e
       end
     end
@@ -105,7 +94,7 @@ end
 
 class EventStoreLoggDecorator < DelegateClass(EventStore)
 
-  def append(id, expected_version, *events)
+  def append(id, *events)
     super
     logg "New events: #{events}"
   end
@@ -121,16 +110,12 @@ class UnitOfWork < BaseObject
   end
 
   def create
-    event_store.create id
+    @event_store.create @id
   end
 
   def append(*events)
-    event_store.append id, expected_version, *events
+    @event_store.append @id, @expected_version, *events
   end
-
-  private
-
-  attr_reader :id, :event_store, :expected_version
 
 end
 
