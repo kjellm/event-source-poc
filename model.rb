@@ -10,16 +10,6 @@
 
 RELEASE_ATTRIBUTES = %I(id title tracks)
 
-class Release < Entity
-  attributes *RELEASE_ATTRIBUTES
-
-  include CrudAggregate
-
-  def assert_validity
-    # Do something here
-  end
-end
-
 class ReleaseCommand < Command
 
   private
@@ -46,57 +36,24 @@ class ReleaseUpdated < Event
   attributes *RELEASE_ATTRIBUTES
 end
 
-#
-# R E C O R D I N G
-#
-# Shows an example where all the different responsibilities are
-# handled by separate objects.
-#
+class Release < Entity
+  attributes *RELEASE_ATTRIBUTES
 
-class RecordingRepository < EventStoreRepository
+  registry.command_router.register_handler(self, CreateRelease, UpdateRelease)
 
-  def type
-    Recording
-  end
-
-  def apply_recording_updated(recording, event)
-    recording.set_attributes(event.to_h)
-  end
-
-end
-
-class RecordingValidator < BaseObject
-
-  def initialize(obj)
-  end
+  include CrudAggregate
 
   def assert_validity
     # Do something here
   end
 end
 
-class RecordingCommandHandler < CrudCommandHandler
-
-  private
-
-  def type; Recording; end
-
-  def repository
-    @repository ||= registry.repository_for(Recording)
-  end
-
-  def validator(obj)
-    RecordingValidator.new(obj)
-  end
-
-  def process_create_recording(command)
-    process_create(command)
-  end
-
-  def process_update_recording(command)
-    process_update(command)
-  end
-end
+#
+# R E C O R D I N G
+#
+# Shows an example where all the different responsibilities are
+# handled by separate objects.
+#
 
 RECORDING_ATTRIBUTES = %I(id title artist duration)
 
@@ -126,6 +83,53 @@ end
 
 class RecordingUpdated < Event
   attributes *RECORDING_ATTRIBUTES
+end
+
+class RecordingRepository < EventStoreRepository
+
+  def type
+    Recording
+  end
+
+  def apply_recording_updated(recording, event)
+    recording.set_attributes(event.to_h)
+  end
+
+end
+
+class RecordingValidator < BaseObject
+
+  def initialize(obj)
+  end
+
+  def assert_validity
+    # Do something here
+  end
+end
+
+class RecordingCommandHandler < CrudCommandHandler
+
+  registry.command_router.register_handler(self.new, CreateRecording, UpdateRecording)
+
+  private
+
+  def type; Recording; end
+
+  def repository
+    @repository ||= registry.repository_for(Recording)
+  end
+
+  def validator(obj)
+    RecordingValidator.new(obj)
+  end
+
+  def process_create_recording(command)
+    process_create(command)
+  end
+
+  def process_update_recording(command)
+    process_update(command)
+  end
 end
 
 class Recording < Entity

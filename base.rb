@@ -93,13 +93,8 @@ end
 
 class Registry < BaseObject
 
-  def command_handler_for(klass)
-    handler = if klass.respond_to? :handle
-                klass
-              else
-                self.class.const_get("#{klass}CommandHandler").new
-              end
-    CommandHandlerLoggDecorator.new(handler)
+  def command_router
+    @command_router ||= CommandRouter.new
   end
 
   def event_store

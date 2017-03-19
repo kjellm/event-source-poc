@@ -34,6 +34,30 @@ class Command < ValueObject
 
 end
 
+class CommandRouter < BaseObject
+
+  def initialize
+    @handlers = {}
+  end
+
+  def register_handler(handler, *command_classes)
+    command_classes.each do |cmd|
+      @handlers[cmd] = CommandHandlerLoggDecorator.new(handler)
+    end
+  end
+
+  def route(command)
+    handler_for(command).public_send :handle, command
+  end
+
+  private
+
+  def handler_for(command)
+    @handlers.fetch command.class
+  end
+
+end
+
 class CommandHandler < BaseObject
 
   module InstanceMethods

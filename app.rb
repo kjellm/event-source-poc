@@ -16,7 +16,7 @@ class Application < BaseObject
   end
 
   def main
-    puts "LOGG ---------------------------------------------------------"
+    puts "LOGG -------------------------------------------------------"
     run_commands
 
     puts
@@ -49,32 +49,25 @@ class Application < BaseObject
   end
 
   def run_commands
-    recording_data = {id: @recording_id, title: "Sledge Hammer",
-                      artist: "Peter Gabriel", duration: 313}
-    run(recording_data, CreateRecording, Recording)
+    run CreateRecording, id: @recording_id, title: "Sledge Hammer",
+                         artist: "Peter Gabriel", duration: 313
 
-    run({id: @release_id, title: "So", tracks: []},
-        CreateRelease, Release)
-    run({id: UUID.generate, title: "Shaking The Tree",
-         tracks: [@recording_id]},
-        CreateRelease, Release)
+    run CreateRelease, id: @release_id, title: "So", tracks: []
+    run CreateRelease, id: UUID.generate, title: "Shaking The Tree",
+                       tracks: [@recording_id]
 
-    run({id: @release_id, title: "So", tracks: [@recording_id]},
-        UpdateRelease, Release)
+    run UpdateRelease, id: @release_id, title: "So", tracks: [@recording_id]
 
-    run(recording_data.merge({ title:  "Sledgehammer" }),
-        UpdateRecording, Recording)
+    run UpdateRecording, title: "Sledgehammer"
 
     # Some failing commands, look in log for verification of failure
-    run({id: "Non-existing ID", title: "Foobar"},
-        UpdateRecording, Recording)
+    run UpdateRecording, id: "Non-existing ID", title: "Foobar"
   end
 
-  def run(request_data, command_class, aggregate)
-    logg "Incoming request with data: #{request_data.inspect}"
-    command_handler = registry.command_handler_for(aggregate)
-    command = command_class.new(request_data)
-    command_handler.handle command
+  def run(command_class, data)
+    logg "Incoming #{command_class.name} request with data: #{data}"
+    command = command_class.new data
+    registry.command_router.route(command)
   rescue StandardError => e
     logg "ERROR: Command #{command} failed because of: #{e}"
   end
