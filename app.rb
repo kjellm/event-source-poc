@@ -1,5 +1,6 @@
 require_relative 'base'
 require_relative 'event'
+require_relative 'event_logg'
 require_relative 'cmd'
 require_relative 'crud'
 require_relative 'model'
