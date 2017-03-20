@@ -39,9 +39,9 @@ end
 class Release < Entity
   include CrudAggregate
 
-  attributes *RELEASE_ATTRIBUTES
-
   registry.command_router.register_handler(self, CreateRelease, UpdateRelease)
+
+  attributes *RELEASE_ATTRIBUTES
 
   def assert_validity
     # Do something here
