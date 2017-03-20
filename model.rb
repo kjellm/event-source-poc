@@ -24,11 +24,11 @@ class CreateRelease < ReleaseCommand
   attributes *RELEASE_ATTRIBUTES
 end
 
-class ReleaseCreated < Event
+class UpdateRelease < ReleaseCommand
   attributes *RELEASE_ATTRIBUTES
 end
 
-class UpdateRelease < ReleaseCommand
+class ReleaseCreated < Event
   attributes *RELEASE_ATTRIBUTES
 end
 
@@ -37,11 +37,11 @@ class ReleaseUpdated < Event
 end
 
 class Release < Entity
+  include CrudAggregate
+
   attributes *RELEASE_ATTRIBUTES
 
   registry.command_router.register_handler(self, CreateRelease, UpdateRelease)
-
-  include CrudAggregate
 
   def assert_validity
     # Do something here
@@ -73,11 +73,11 @@ class CreateRecording < RecordingCommand
   attributes *RECORDING_ATTRIBUTES
 end
 
-class RecordingCreated < Event
+class UpdateRecording < RecordingCommand
   attributes *RECORDING_ATTRIBUTES
 end
 
-class UpdateRecording < RecordingCommand
+class RecordingCreated < Event
   attributes *RECORDING_ATTRIBUTES
 end
 
@@ -109,7 +109,7 @@ end
 
 class RecordingCommandHandler < CrudCommandHandler
 
-  registry.command_router.register_handler(self.new, CreateRecording, UpdateRecording)
+  registry.command_router.register_handler(new, CreateRecording, UpdateRecording)
 
   private
 
