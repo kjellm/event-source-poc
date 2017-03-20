@@ -10,16 +10,6 @@
 
 RELEASE_ATTRIBUTES = %I(id title tracks)
 
-class Release < Entity
-  attributes *RELEASE_ATTRIBUTES
-
-  include CrudAggregate
-
-  def assert_validity
-    # Do something here
-  end
-end
-
 class ReleaseCommand < Command
 
   private
@@ -34,16 +24,28 @@ class CreateRelease < ReleaseCommand
   attributes *RELEASE_ATTRIBUTES
 end
 
-class ReleaseCreated < Event
+class UpdateRelease < ReleaseCommand
   attributes *RELEASE_ATTRIBUTES
 end
 
-class UpdateRelease < ReleaseCommand
+class ReleaseCreated < Event
   attributes *RELEASE_ATTRIBUTES
 end
 
 class ReleaseUpdated < Event
   attributes *RELEASE_ATTRIBUTES
+end
+
+class Release < Entity
+  include CrudAggregate
+
+  registry.command_router.register_handler(self, CreateRelease, UpdateRelease)
+
+  attributes *RELEASE_ATTRIBUTES
+
+  def assert_validity
+    # Do something here
+  end
 end
 
 #
@@ -52,6 +54,36 @@ end
 # Shows an example where all the different responsibilities are
 # handled by separate objects.
 #
+
+RECORDING_ATTRIBUTES = %I(id title artist duration)
+
+class RecordingCommand < Command
+
+  private
+
+  def validate
+    required(*RECORDING_ATTRIBUTES.map {|m| send m})
+    non_blank_string(title)
+    non_blank_string(artist)
+    positive_integer(duration)
+  end
+end
+
+class CreateRecording < RecordingCommand
+  attributes *RECORDING_ATTRIBUTES
+end
+
+class UpdateRecording < RecordingCommand
+  attributes *RECORDING_ATTRIBUTES
+end
+
+class RecordingCreated < Event
+  attributes *RECORDING_ATTRIBUTES
+end
+
+class RecordingUpdated < Event
+  attributes *RECORDING_ATTRIBUTES
+end
 
 class RecordingRepository < EventStoreRepository
 
@@ -77,6 +109,8 @@ end
 
 class RecordingCommandHandler < CrudCommandHandler
 
+  registry.command_router.register_handler(new, CreateRecording, UpdateRecording)
+
   private
 
   def type; Recording; end
@@ -96,36 +130,6 @@ class RecordingCommandHandler < CrudCommandHandler
   def process_update_recording(command)
     process_update(command)
   end
-end
-
-RECORDING_ATTRIBUTES = %I(id title artist duration)
-
-class RecordingCommand < Command
-
-  private
-
-  def validate
-    required(*RECORDING_ATTRIBUTES.map {|m| send m})
-    non_blank_string(title)
-    non_blank_string(artist)
-    positive_integer(duration)
-  end
-end
-
-class CreateRecording < RecordingCommand
-  attributes *RECORDING_ATTRIBUTES
-end
-
-class RecordingCreated < Event
-  attributes *RECORDING_ATTRIBUTES
-end
-
-class UpdateRecording < RecordingCommand
-  attributes *RECORDING_ATTRIBUTES
-end
-
-class RecordingUpdated < Event
-  attributes *RECORDING_ATTRIBUTES
 end
 
 class Recording < Entity
