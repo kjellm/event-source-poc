@@ -47,7 +47,7 @@ class CommandRouter < BaseObject
   end
 
   def route(command)
-    handler_for(command).public_send :handle, command
+    handler_for(command).handle(command)
   end
 
   private
