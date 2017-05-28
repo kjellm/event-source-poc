@@ -74,8 +74,13 @@ class Application < BaseObject
   end
 
   def run_commands
-    run CreateRecording, id: @recording_id, title: "Sledge Hammer",
-                         artist: "Peter Gabriel", duration: 313
+    sledgehammer = {
+      id: @recording_id,
+      title: "Sledge Hammer",
+      artist: "Peter Gabriel",
+      duration: 313,
+    }
+    run CreateRecording, sledgehammer
 
     run CreateRelease, id: @release_id, title: "So", tracks: []
     run CreateRelease, id: UUID.generate, title: "Shaking The Tree",
@@ -85,7 +90,7 @@ class Application < BaseObject
 
     @checkpoint = Time.now
 
-    run UpdateRecording, title: "Sledgehammer"
+    run UpdateRecording, sledgehammer.merge({title: "Sledgehammer"})
 
     # Some failing commands, look in log for verification of failure
     run UpdateRecording, id: "Non-existing ID", title: "Foobar"
