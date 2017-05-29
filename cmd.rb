@@ -76,17 +76,14 @@ class CommandHandler < BaseObject
 
 end
 
-class CommandHandlerLoggDecorator < DelegateClass(CommandHandler)
-
-  def initialize(obj)
-    super obj
-  end
+class CommandHandlerLoggDecorator < SimpleDelegator
 
   def handle(command)
-    logg "Start handling: #{command.inspect}"
-    super
+    BaseObject.logg "Start handling: #{command.inspect}"
+    p self.class.ancestors
+    __getobj__.handle(command)
   ensure
-    logg "Done handling: #{command.class.name}"
+    BaseObject.logg "Done handling: #{command.class.name}"
   end
 
 end
